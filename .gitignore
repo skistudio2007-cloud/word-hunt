@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -30,6 +30,8 @@ android/.idea/
 android/*.iml
 android/app/*.iml
 
-# Release binaries (keep in releases/ or download via GitHub Actions artifacts)
+# Release binaries
 *.apk
 *.aab
+!releases/*.apk
+!releases/*.aab
