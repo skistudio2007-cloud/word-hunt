@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.wordhunt.puzzle"
     compileSdk = rootProject.ext.compileSdkVersion
+    buildToolsVersion = "35.0.0"
     defaultConfig {
         applicationId "com.wordhunt.puzzle"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -22,12 +23,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
+}
+
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }
 
 dependencies {
