@@ -1,0 +1,344 @@
+import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
+import { WorldInfo } from '../types';
+
+interface Props {
+  world: WorldInfo;
+  levelNumber: number;
+  variant?: 'gameplay' | 'home';
+}
+
+interface Particle {
+  id: number;
+  item: string;
+  x: number; // percentage 0 - 100
+  y: number; // percentage 0 - 100
+  size: number; // px
+  duration: number; // seconds
+  delay: number; // seconds
+  rotation: number;
+  opacity: number;
+}
+
+interface LetterTile {
+  id: number;
+  letter: string;
+  x: number;
+  y: number;
+  duration: number;
+  delay: number;
+  size: number;
+}
+
+export const AnimatedThemeBackground: React.FC<Props> = React.memo(({ 
+  world, 
+  levelNumber,
+  variant = 'gameplay' 
+}) => {
+  const themeType = world.themeType || 'nature';
+
+  // Seeded themed particles
+  const particles = useMemo(() => {
+    const decorations = world.bgDecorations && world.bgDecorations.length > 0 
+      ? world.bgDecorations 
+      : ['✨', '🌟', '💫'];
+
+    const count = variant === 'home' ? 16 : 14;
+    const list: Particle[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const pseudoRand = Math.sin(levelNumber * 100 + i * 37) * 10000;
+      const r1 = Math.abs(pseudoRand - Math.floor(pseudoRand));
+      const pseudoRand2 = Math.sin(levelNumber * 200 + i * 59) * 10000;
+      const r2 = Math.abs(pseudoRand2 - Math.floor(pseudoRand2));
+      const pseudoRand3 = Math.sin(levelNumber * 300 + i * 83) * 10000;
+      const r3 = Math.abs(pseudoRand3 - Math.floor(pseudoRand3));
+
+      list.push({
+        id: i,
+        item: decorations[i % decorations.length],
+        x: Math.floor(r1 * 84) + 8,
+        y: Math.floor(r2 * 84) + 8,
+        size: 16 + Math.floor(r3 * 16),
+        duration: 9 + Math.floor(r1 * 9),
+        delay: Math.floor(r2 * 4),
+        rotation: Math.floor(r3 * 360),
+        opacity: 0.35 + r3 * 0.35
+      });
+    }
+
+    return list;
+  }, [world.bgDecorations, levelNumber, variant]);
+
+  // Floating Alphabet Letter Tiles (W, O, R, D, H, U, N, T...)
+  const letterTiles = useMemo(() => {
+    const letters = ['W', 'O', 'R', 'D', 'H', 'U', 'N', 'T', 'S', 'E', 'A', 'R', 'C', 'H'];
+    const count = variant === 'home' ? 8 : 6;
+    const list: LetterTile[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const pseudoRand = Math.sin(levelNumber * 150 + i * 43) * 10000;
+      const r1 = Math.abs(pseudoRand - Math.floor(pseudoRand));
+      const pseudoRand2 = Math.sin(levelNumber * 250 + i * 67) * 10000;
+      const r2 = Math.abs(pseudoRand2 - Math.floor(pseudoRand2));
+      const pseudoRand3 = Math.sin(levelNumber * 350 + i * 89) * 10000;
+      const r3 = Math.abs(pseudoRand3 - Math.floor(pseudoRand3));
+
+      list.push({
+        id: i,
+        letter: letters[(i + levelNumber) % letters.length],
+        x: Math.floor(r1 * 82) + 9,
+        y: Math.floor(r2 * 82) + 9,
+        size: 26 + Math.floor(r3 * 10),
+        duration: 12 + Math.floor(r1 * 10),
+        delay: Math.floor(r2 * 6)
+      });
+    }
+
+    return list;
+  }, [levelNumber, variant]);
+
+  // Theme palettes and subtle lighting effects for pure white background
+  const themeStyles = useMemo(() => {
+    switch (themeType) {
+      case 'ocean':
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, rgba(14,165,233,0.04) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(20,184,166,0.03) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(14, 116, 144, 0.65)'
+        };
+      case 'space':
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(139,92,246,0.04) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(236,72,153,0.03) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(192,132,252,0.08) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(126, 34, 206, 0.65)'
+        };
+      case 'snow':
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(56,189,248,0.12) 0%, rgba(147,197,253,0.04) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(186,230,253,0.15) 0%, rgba(224,242,254,0.05) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(125,211,252,0.08) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(3, 105, 161, 0.65)'
+        };
+      case 'desert':
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(251,146,60,0.04) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(234,88,12,0.09) 0%, rgba(252,211,77,0.03) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(180, 83, 9, 0.65)'
+        };
+      case 'ancient':
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(217,119,6,0.11) 0%, rgba(180,83,9,0.03) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(251,191,36,0.1) 0%, rgba(245,158,11,0.03) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(161, 98, 7, 0.65)'
+        };
+      case 'nature':
+      default:
+        return {
+          baseGradient: '#ffffff',
+          blob1: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(20,184,166,0.04) 50%, transparent 70%)',
+          blob2: 'radial-gradient(circle, rgba(52,211,153,0.1) 0%, rgba(132,204,22,0.03) 50%, transparent 70%)',
+          blob3: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 60%)',
+          tileBg: '#ffffff',
+          tileBorder: 'rgba(226, 232, 240, 0.9)',
+          tileText: 'rgba(4, 120, 87, 0.65)'
+        };
+    }
+  }, [themeType]);
+
+  return (
+    <div 
+      id="animated-theme-background" 
+      className="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none bg-white"
+    >
+      {/* 1. Subtle Ambient Gradient Orbs on Pure White */}
+      <motion.div
+        animate={{
+          x: [0, 40, -30, 0],
+          y: [0, -50, 30, 0],
+          scale: [1, 1.2, 0.95, 1],
+          opacity: [0.4, 0.7, 0.45, 0.4]
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl"
+        style={{ background: themeStyles.blob1 }}
+      />
+
+      <motion.div
+        animate={{
+          x: [0, -45, 35, 0],
+          y: [0, 50, -40, 0],
+          scale: [1, 1.15, 0.9, 1],
+          opacity: [0.35, 0.65, 0.4, 0.35]
+        }}
+        transition={{
+          duration: 22,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        className="absolute -bottom-32 -right-32 w-[420px] h-[420px] rounded-full blur-3xl"
+        style={{ background: themeStyles.blob2 }}
+      />
+
+      <motion.div
+        animate={{
+          scale: [0.85, 1.15, 0.85],
+          opacity: [0.3, 0.6, 0.3]
+        }}
+        transition={{
+          duration: 12,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-2xl"
+        style={{ background: themeStyles.blob3 }}
+      />
+
+      {/* 2. Floating Letter Tile Runes (Layer 2) */}
+      {letterTiles.map((tile) => (
+        <motion.div
+          key={`tile-${tile.id}`}
+          initial={{
+            x: `${tile.x}vw`,
+            y: `${tile.y}vh`,
+            opacity: 0,
+            scale: 0.8
+          }}
+          animate={{
+            x: [
+              `${tile.x}vw`,
+              `${tile.x + 8}vw`,
+              `${tile.x - 8}vw`,
+              `${tile.x}vw`
+            ],
+            y: [
+              `${tile.y}vh`,
+              `${tile.y - 18}vh`,
+              `${tile.y + 12}vh`,
+              `${tile.y}vh`
+            ],
+            rotate: [-8, 8, -6, -8],
+            opacity: [0.22, 0.45, 0.28, 0.22],
+            scale: [0.95, 1.06, 0.95]
+          }}
+          transition={{
+            duration: tile.duration,
+            repeat: Infinity,
+            delay: tile.delay,
+            ease: 'easeInOut'
+          }}
+          className="absolute flex items-center justify-center font-black rounded-xl shadow-xs backdrop-blur-xs pointer-events-none"
+          style={{
+            width: `${tile.size}px`,
+            height: `${tile.size}px`,
+            fontSize: `${Math.round(tile.size * 0.55)}px`,
+            backgroundColor: themeStyles.tileBg,
+            border: `1.5px solid ${themeStyles.tileBorder}`,
+            color: themeStyles.tileText,
+            willChange: 'transform, opacity'
+          }}
+        >
+          {tile.letter}
+        </motion.div>
+      ))}
+
+      {/* 3. Floating Theme-Specific Particles (Layer 3) */}
+      {particles.map((p) => {
+        let animateY: number[] = [0, -30, 20, 0];
+        let animateX: number[] = [0, 20, -20, 0];
+        let animateRotate: number[] = [0, 20, -20, 0];
+
+        if (themeType === 'ocean') {
+          // Bubbles rising smoothly with drift
+          animateY = [0, -55, -110, 0];
+          animateX = [0, -16, 16, 0];
+          animateRotate = [0, 10, -10, 0];
+        } else if (themeType === 'snow') {
+          // Snow drifting down with fluttering rotation
+          animateY = [0, 45, 90, 0];
+          animateX = [0, 20, -20, 0];
+          animateRotate = [0, 120, 240, 360];
+        } else if (themeType === 'space') {
+          // Cosmic twinkle & orbital pulse
+          animateY = [0, -15, 15, 0];
+          animateX = [0, 15, -15, 0];
+          animateRotate = [0, 60, 120, 180];
+        } else if (themeType === 'desert') {
+          // Desert heat shimmer drifting
+          animateY = [0, -35, -20, 0];
+          animateX = [0, 30, 15, 0];
+        }
+
+        return (
+          <motion.div
+            key={`p-${p.id}`}
+            initial={{
+              x: `${p.x}vw`,
+              y: `${p.y}vh`,
+              opacity: p.opacity,
+              scale: 0.9
+            }}
+            animate={{
+              x: [
+                `${p.x}vw`,
+                `${p.x + animateX[1] * 0.45}vw`,
+                `${p.x + animateX[2] * 0.45}vw`,
+                `${p.x}vw`
+              ],
+              y: [
+                `${p.y}vh`,
+                `${p.y + animateY[1] * 0.55}vh`,
+                `${p.y + animateY[2] * 0.55}vh`,
+                `${p.y}vh`
+              ],
+              rotate: [p.rotation, p.rotation + animateRotate[1], p.rotation + animateRotate[2], p.rotation],
+              opacity: [p.opacity, p.opacity * 1.35, p.opacity * 0.65, p.opacity],
+              scale: [1, 1.15, 0.9, 1]
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'easeInOut'
+            }}
+            className="absolute select-none filter drop-shadow-xs pointer-events-none"
+            style={{
+              fontSize: `${p.size}px`,
+              willChange: 'transform, opacity'
+            }}
+          >
+            {p.item}
+          </motion.div>
+        );
+      })}
+
+      {/* 4. Pure White Bottom Fade */}
+      <div className="absolute bottom-0 inset-x-0 h-16 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent" />
+    </div>
+  );
+});
+
+AnimatedThemeBackground.displayName = 'AnimatedThemeBackground';

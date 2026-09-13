@@ -1,0 +1,6 @@
+{
+  "name": "WORD HUNT",
+  "description": "Find. Learn. Explore. A modern word search adventure game with 10,000+ levels, journey progression, daily puzzles, and relaxing gameplay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
