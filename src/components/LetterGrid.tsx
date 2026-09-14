@@ -22,6 +22,7 @@ export const LetterGrid: React.FC<Props> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cachedRectRef = useRef<DOMRect | null>(null);
+  const lastPointerCellRef = useRef<Coordinate | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [startCoord, setStartCoord] = useState<Coordinate | null>(null);
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
@@ -141,6 +142,7 @@ export const LetterGrid: React.FC<Props> = ({
     const cell = getCellFromPointer(e.clientX, e.clientY);
     if (!cell) return;
 
+    lastPointerCellRef.current = cell;
     setIsSelecting(true);
     setStartCoord(cell);
     setCurrentSelection([cell]);
@@ -151,6 +153,16 @@ export const LetterGrid: React.FC<Props> = ({
     if (isCompleting || !isSelecting || !startCoord) return;
     const cell = getCellFromPointer(e.clientX, e.clientY);
     if (!cell) return;
+
+    // High refresh rate (90-120Hz) optimization: skip if still inside the same cell
+    if (
+      lastPointerCellRef.current &&
+      lastPointerCellRef.current.row === cell.row &&
+      lastPointerCellRef.current.col === cell.col
+    ) {
+      return;
+    }
+    lastPointerCellRef.current = cell;
 
     const newLine = calculateLineSelection(startCoord, cell);
 
@@ -170,6 +182,7 @@ export const LetterGrid: React.FC<Props> = ({
 
   const finishSelection = useCallback(() => {
     cachedRectRef.current = null;
+    lastPointerCellRef.current = null;
     if (!isSelecting || currentSelection.length === 0) {
       setIsSelecting(false);
       setStartCoord(null);
@@ -237,6 +250,7 @@ export const LetterGrid: React.FC<Props> = ({
   };
 
   const handlePointerCancel = () => {
+    lastPointerCellRef.current = null;
     setIsSelecting(false);
     setStartCoord(null);
     setCurrentSelection([]);
