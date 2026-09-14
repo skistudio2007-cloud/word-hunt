@@ -53,13 +53,24 @@ const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, on
       }
       whileHover={{ scale: 1.04 }}
       whileTap={{ scale: 0.96 }}
-      className={`group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-colors duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs ${
+      className={`group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs ${
         word.found
-          ? 'bg-slate-100/90 text-slate-400 line-through border border-slate-200'
+          ? 'font-bold shadow-2xs'
           : highContrast
           ? 'bg-white text-slate-900 border-2 border-slate-900'
-          : 'bg-white text-slate-900 border border-slate-200 hover:border-blue-400'
+          : 'bg-white text-slate-800 border border-slate-200/90 hover:border-blue-400'
       }`}
+      style={
+        word.found
+          ? {
+              backgroundColor: `${word.color || '#2563EB'}15`,
+              borderColor: `${word.color || '#2563EB'}55`,
+              borderWidth: '1.5px',
+              borderStyle: 'solid',
+              color: word.color || '#2563EB'
+            }
+          : undefined
+      }
       title={word.found ? 'Tap to view definition' : undefined}
     >
       {word.found ? (
@@ -68,11 +79,9 @@ const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, on
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: word.color || '#2563EB' }}
           />
-          <span>{word.word}</span>
-          <div className="flex items-center">
-            <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3] ml-0.5" />
-          </div>
-          <Info className="w-3 h-3 text-slate-400 group-hover:text-blue-600 transition-colors" />
+          <span className="line-through decoration-current opacity-90">{word.word}</span>
+          <Check className="w-3.5 h-3.5 stroke-[3]" style={{ color: word.color || '#2563EB' }} />
+          <Info className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
         </>
       ) : (
         <span>{word.word}</span>

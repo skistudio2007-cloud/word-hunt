@@ -267,6 +267,43 @@ export const LetterGrid: React.FC<Props> = ({
     return s;
   }, [currentSelection]);
 
+  // Active dragging highlighter capsule coordinates
+  const selectionCapsule = React.useMemo(() => {
+    if (!isSelecting || currentSelection.length === 0) return null;
+    const first = currentSelection[0];
+    const last = currentSelection[currentSelection.length - 1];
+    const step = 1000 / gridSize;
+    const x1 = (first.col + 0.5) * step;
+    const y1 = (first.row + 0.5) * step;
+    const x2 = (last.col + 0.5) * step;
+    const y2 = (last.row + 0.5) * step;
+    const strokeW = step * 0.76;
+    return { x1, y1, x2, y2, strokeW };
+  }, [isSelecting, currentSelection, gridSize]);
+
+  // Found words persistent highlighter capsules
+  const foundCapsules = React.useMemo(() => {
+    const step = 1000 / gridSize;
+    const strokeW = step * 0.70;
+    return words
+      .filter(w => w.found)
+      .map(w => {
+        const x1 = (w.start.col + 0.5) * step;
+        const y1 = (w.start.row + 0.5) * step;
+        const x2 = (w.end.col + 0.5) * step;
+        const y2 = (w.end.row + 0.5) * step;
+        return {
+          id: w.id || w.word,
+          x1,
+          y1,
+          x2,
+          y2,
+          strokeW,
+          color: w.color || '#2563EB'
+        };
+      });
+  }, [words, gridSize]);
+
   return (
     <div className="relative w-full max-w-[400px] aspect-square mx-auto p-1 sm:p-2 select-none touch-none">
       {/* Large White Rounded Puzzle Board with subtle bounce on victory */}
@@ -300,6 +337,42 @@ export const LetterGrid: React.FC<Props> = ({
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
         >
+          {/* Real-time SVG Pill Highlighter Trails */}
+          <svg
+            viewBox="0 0 1000 1000"
+            className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
+            preserveAspectRatio="none"
+          >
+            {/* Found Words Connecting Capsules */}
+            {foundCapsules.map((cap) => (
+              <line
+                key={`found-cap-${cap.id}`}
+                x1={cap.x1}
+                y1={cap.y1}
+                x2={cap.x2}
+                y2={cap.y2}
+                stroke={cap.color}
+                strokeWidth={cap.strokeW}
+                strokeLinecap="round"
+                opacity="0.22"
+              />
+            ))}
+
+            {/* Active Finger Drag Capsule */}
+            {selectionCapsule && (
+              <line
+                x1={selectionCapsule.x1}
+                y1={selectionCapsule.y1}
+                x2={selectionCapsule.x2}
+                y2={selectionCapsule.y2}
+                stroke="#2563EB"
+                strokeWidth={selectionCapsule.strokeW}
+                strokeLinecap="round"
+                opacity="0.28"
+              />
+            )}
+          </svg>
+
           {grid.map((rowArr, r) =>
             rowArr.map((letter, c) => {
               const cellKey = `${r}-${c}`;
