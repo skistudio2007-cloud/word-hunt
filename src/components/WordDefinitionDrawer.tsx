@@ -22,21 +22,24 @@ export const WordDefinitionDrawer: React.FC<Props> = ({ word, onClose }) => {
   };
 
   return (
-    <AnimatePresence>
-      <div 
-        id="word-definition-backdrop"
-        className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 select-none"
-        onClick={onClose}
+    <motion.div 
+      id="word-definition-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 select-none"
+      onClick={onClose}
+    >
+      <motion.div
+        id="word-definition-drawer"
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+        className="w-full max-w-md bg-white border-t sm:border border-slate-100 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl text-slate-900 relative max-h-[85vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
       >
-        <motion.div
-          id="word-definition-drawer"
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="w-full max-w-md bg-white border-t sm:border border-slate-100 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl text-slate-900 relative max-h-[85vh] overflow-y-auto"
-          onClick={e => e.stopPropagation()}
-        >
           {/* Header pill bar */}
           <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden" />
 
@@ -101,7 +104,6 @@ export const WordDefinitionDrawer: React.FC<Props> = ({ word, onClose }) => {
             Continue Playing
           </motion.button>
         </motion.div>
-      </div>
-    </AnimatePresence>
-  );
-};
+      </motion.div>
+    );
+  };

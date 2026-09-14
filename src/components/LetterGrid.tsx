@@ -110,7 +110,7 @@ export const LetterGrid: React.FC<Props> = ({
         // Diagonal: (1,1), (-1,-1), (1,-1), or (-1,1)
         stepRow = Math.sign(dRow);
         stepCol = Math.sign(dCol);
-        length = Math.max(absRow, absCol) + 1;
+        length = Math.min(absRow, absCol) + 1;
       }
 
       const line: Coordinate[] = [];
@@ -151,8 +151,16 @@ export const LetterGrid: React.FC<Props> = ({
 
     const newLine = calculateLineSelection(startCoord, cell);
 
-    if (newLine.length !== currentSelection.length) {
-      soundManager.playLetterSnap(newLine.length - 1);
+    const lastNew = newLine[newLine.length - 1];
+    const lastCurrent = currentSelection[currentSelection.length - 1];
+    if (
+      newLine.length !== currentSelection.length ||
+      lastNew?.row !== lastCurrent?.row ||
+      lastNew?.col !== lastCurrent?.col
+    ) {
+      if (newLine.length !== currentSelection.length) {
+        soundManager.playLetterSnap(newLine.length - 1);
+      }
       setCurrentSelection(newLine);
     }
   };
@@ -295,120 +303,146 @@ export const LetterGrid: React.FC<Props> = ({
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
         >
-          {/* SVG Overlay for Vector Highlights and Active Drag Line */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
+          {/* Layer 1: Tile Surface Backgrounds */}
+          <div
+            className="absolute inset-0 grid gap-1 pointer-events-none"
+            style={{
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
+            }}
+          >
+            {grid.map((rowArr, r) =>
+              rowArr.map((_, c) => {
+                const cellKey = `${r}-${c}`;
+                const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
+                return (
+                  <div
+                    key={`tile-bg-${cellKey}`}
+                    className={`relative rounded-xl transition-all duration-150 ${
+                      isHinted
+                        ? 'bg-amber-100/90 border-2 border-amber-500 shadow-md shadow-amber-500/20'
+                        : 'bg-slate-50/80 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
+                    }`}
+                  />
+                );
+              })
+            )}
+          </div>
+
+          {/* Layer 2: SVG Vector Highlighter Capsules (Zero Clutter, Silky Smooth) */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible"
+            viewBox={`0 0 ${gridSize * 100} ${gridSize * 100}`}
+          >
             {/* Render completed word highlight lines */}
             {words.filter(w => w.found).map((w, idx) => {
               if (w.cells.length < 2) return null;
-              const startCenter = {
-                x: ((w.start.col + 0.5) / gridSize) * 100,
-                y: ((w.start.row + 0.5) / gridSize) * 100
-              };
-              const endCenter = {
-                x: ((w.end.col + 0.5) / gridSize) * 100,
-                y: ((w.end.row + 0.5) / gridSize) * 100
-              };
+              const x1 = w.start.col * 100 + 50;
+              const y1 = w.start.row * 100 + 50;
+              const x2 = w.end.col * 100 + 50;
+              const y2 = w.end.row * 100 + 50;
 
               return (
                 <line
                   key={`found-line-${w.id || idx}`}
-                  x1={`${startCenter.x}%`}
-                  y1={`${startCenter.y}%`}
-                  x2={`${endCenter.x}%`}
-                  y2={`${endCenter.y}%`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
                   stroke={w.color || '#2563EB'}
-                  strokeWidth="28"
+                  strokeWidth="74"
                   strokeLinecap="round"
-                  strokeOpacity={isCompleting ? "0.6" : "0.4"}
+                  strokeOpacity={isCompleting ? 0.7 : 0.42}
                   className="transition-all duration-300"
                 />
               );
             })}
 
-            {/* Render active dragging selection line */}
+            {/* Active single cell touch dot */}
+            {isSelecting && currentSelection.length === 1 && (
+              <circle
+                cx={currentSelection[0].col * 100 + 50}
+                cy={currentSelection[0].row * 100 + 50}
+                r="37"
+                fill="#2563EB"
+                fillOpacity="0.45"
+              />
+            )}
+
+            {/* Active multi-cell drag line */}
             {isSelecting && currentSelection.length >= 2 && (
               <line
-                x1={`${((currentSelection[0].col + 0.5) / gridSize) * 100}%`}
-                y1={`${((currentSelection[0].row + 0.5) / gridSize) * 100}%`}
-                x2={`${((currentSelection[currentSelection.length - 1].col + 0.5) / gridSize) * 100}%`}
-                y2={`${((currentSelection[currentSelection.length - 1].row + 0.5) / gridSize) * 100}%`}
+                x1={currentSelection[0].col * 100 + 50}
+                y1={currentSelection[0].row * 100 + 50}
+                x2={currentSelection[currentSelection.length - 1].col * 100 + 50}
+                y2={currentSelection[currentSelection.length - 1].row * 100 + 50}
                 stroke="#2563EB"
-                strokeWidth="28"
+                strokeWidth="74"
                 strokeLinecap="round"
-                strokeOpacity="0.45"
+                strokeOpacity="0.48"
               />
             )}
           </svg>
 
-          {/* Grid Cells with Navy Letters - High Performance Hardware Accelerated */}
-          {grid.map((rowArr, r) =>
-            rowArr.map((letter, c) => {
-              const cellKey = `${r}-${c}`;
-              const selected = selectedSet.has(cellKey);
-              const foundColors = foundCellsMap.get(cellKey);
-              const isFound = foundColors && foundColors.length > 0;
-              const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
-              const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
+          {/* Layer 3: Letters Typography and Hint Overlays */}
+          <div
+            className="absolute inset-0 grid gap-1 pointer-events-none z-20"
+            style={{
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
+            }}
+          >
+            {grid.map((rowArr, r) =>
+              rowArr.map((letter, c) => {
+                const cellKey = `${r}-${c}`;
+                const selected = selectedSet.has(cellKey);
+                const foundColors = foundCellsMap.get(cellKey);
+                const isFound = foundColors && foundColors.length > 0;
+                const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
+                const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
 
-              return (
-                <div
-                  key={`cell-${cellKey}`}
-                  id={`letter-cell-${cellKey}`}
-                  className={`relative flex items-center justify-center rounded-xl font-black select-none transition-transform duration-100 ease-out will-change-transform ${
-                    isJustFound
-                      ? 'scale-110 -rotate-1 z-30'
-                      : selected
-                      ? 'scale-105 z-20'
-                      : isFound
-                      ? 'scale-100 z-15'
-                      : 'scale-100 z-10'
-                  }`}
-                >
-                  {/* Glowing Hint Indicator */}
-                  {isHinted && (
-                    <>
-                      <div className="absolute inset-0 rounded-xl bg-amber-400/50 animate-ping pointer-events-none" />
-                      <div className="absolute -inset-1 rounded-2xl bg-amber-400/40 animate-pulse blur-xs pointer-events-none" />
-                    </>
-                  )}
-
-                  {/* Tile Surface */}
+                return (
                   <div
-                    className={`absolute inset-0.5 rounded-xl transition-colors duration-150 ${
-                      selected
-                        ? 'bg-blue-600 shadow-md shadow-blue-500/30'
-                        : isHinted
-                        ? 'bg-amber-100 border-2 border-amber-500 shadow-md shadow-amber-500/30 ring-2 ring-amber-400/50 animate-pulse'
-                        : isFound
-                        ? 'bg-slate-100/80 shadow-xs'
-                        : 'bg-slate-50/80 border border-slate-100'
+                    key={`cell-${cellKey}`}
+                    id={`letter-cell-${cellKey}`}
+                    className={`relative flex items-center justify-center font-black select-none transition-transform duration-100 ease-out will-change-transform ${
+                      isJustFound
+                        ? 'scale-125 -rotate-2 z-30'
+                        : selected
+                        ? 'scale-115 z-20'
+                        : 'scale-100 z-10'
                     }`}
-                  />
-
-                  {/* Navy Letter Typography */}
-                  <span
-                    className={`relative z-20 pointer-events-none leading-none select-none tracking-wide ${
-                      selected
-                        ? 'text-white font-black'
-                        : isFound
-                        ? 'text-slate-900 font-black'
-                        : 'text-slate-800 font-bold'
-                    } ${
-                      gridSize <= 5
-                        ? 'text-2xl sm:text-3xl font-black'
-                        : gridSize <= 7
-                        ? 'text-xl sm:text-2xl font-black'
-                        : gridSize <= 8
-                        ? 'text-lg sm:text-xl font-bold'
-                        : 'text-base sm:text-lg font-bold'
-                    } ${isHinted ? 'text-amber-700 font-black scale-110' : ''}`}
                   >
-                    {letter}
-                  </span>
-                </div>
-              );
-            })
-          )}
+                    {/* Glowing Hint Indicator */}
+                    {isHinted && (
+                      <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
+                    )}
+
+                    {/* Navy Letter Typography */}
+                    <span
+                      className={`relative z-20 leading-none select-none tracking-wide transition-colors ${
+                        selected
+                          ? 'text-blue-950 font-black'
+                          : isFound
+                          ? 'text-slate-900 font-black'
+                          : 'text-slate-800 font-bold'
+                      } ${
+                        gridSize <= 5
+                          ? 'text-2xl sm:text-3xl font-black'
+                          : gridSize <= 7
+                          ? 'text-xl sm:text-2xl font-black'
+                          : gridSize <= 8
+                          ? 'text-lg sm:text-xl font-bold'
+                          : 'text-base sm:text-lg font-bold'
+                      } ${isHinted ? 'text-amber-800 font-black scale-110' : ''}`}
+                    >
+                      {letter}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

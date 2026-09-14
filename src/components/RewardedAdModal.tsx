@@ -80,19 +80,22 @@ export const RewardedAdModal: React.FC<Props> = ({
   };
 
   return (
-    <AnimatePresence>
-      <div 
-        id="rewarded-ad-backdrop"
-        className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 select-none"
+    <motion.div 
+      id="rewarded-ad-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+    >
+      <motion.div
+        id="rewarded-ad-modal"
+        initial={{ scale: 0.88, opacity: 0, y: 15 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.88, opacity: 0, y: 10 }}
+        transition={{ type: 'spring', damping: 24, stiffness: 350 }}
+        className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col space-y-4 relative overflow-hidden"
       >
-        <motion.div
-          id="rewarded-ad-modal"
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.92, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col space-y-4 relative overflow-hidden"
-        >
           {/* Top Bar with Ad Badge and Close button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -193,8 +196,7 @@ export const RewardedAdModal: React.FC<Props> = ({
             </motion.div>
           )}
         </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+      </motion.div>
+    );
 };
 

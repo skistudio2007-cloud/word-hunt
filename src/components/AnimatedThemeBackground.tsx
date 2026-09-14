@@ -189,26 +189,16 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
         <motion.div
           key={`tile-${tile.id}`}
           initial={{
-            x: `${tile.x}vw`,
-            y: `${tile.y}vh`,
+            x: 0,
+            y: 0,
             opacity: 0,
             scale: 0.8
           }}
           animate={{
-            x: [
-              `${tile.x}vw`,
-              `${tile.x + 4}vw`,
-              `${tile.x - 4}vw`,
-              `${tile.x}vw`
-            ],
-            y: [
-              `${tile.y}vh`,
-              `${tile.y - 12}vh`,
-              `${tile.y + 8}vh`,
-              `${tile.y}vh`
-            ],
-            rotate: [-4, 4, -4],
-            opacity: [0.25, 0.45, 0.25]
+            x: [0, 14, -14, 0],
+            y: [0, -26, 16, 0],
+            rotate: [-5, 5, -5],
+            opacity: [0.25, 0.5, 0.25]
           }}
           transition={{
             duration: tile.duration,
@@ -218,6 +208,8 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
           }}
           className="absolute flex items-center justify-center font-black rounded-xl pointer-events-none shadow-xs"
           style={{
+            left: `${tile.x}%`,
+            top: `${tile.y}%`,
             width: `${tile.size}px`,
             height: `${tile.size}px`,
             fontSize: `${Math.round(tile.size * 0.55)}px`,

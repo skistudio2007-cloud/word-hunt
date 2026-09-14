@@ -45,11 +45,15 @@ export const TutorialOverlay: React.FC<Props> = ({ onComplete }) => {
   const curr = tutorialSteps[step];
 
   return (
-    <AnimatePresence>
-      <div 
-        id="tutorial-overlay"
-        className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 select-none"
-      >
+    <motion.div 
+      id="tutorial-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+    >
+      <AnimatePresence mode="wait">
         <motion.div
           key={`tut-step-${step}`}
           initial={{ scale: 0.92, opacity: 0, y: 10 }}
@@ -93,7 +97,7 @@ export const TutorialOverlay: React.FC<Props> = ({ onComplete }) => {
             <ArrowRight className="w-4 h-4 text-black" />
           </motion.button>
         </motion.div>
-      </div>
-    </AnimatePresence>
+      </AnimatePresence>
+    </motion.div>
   );
 };

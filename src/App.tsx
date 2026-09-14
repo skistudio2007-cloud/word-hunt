@@ -573,87 +573,105 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* 3. Pause Screen Overlay */}
-        {gameState === 'PAUSED' && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-full max-w-sm bg-white border border-slate-100 rounded-3xl p-6 text-center space-y-4 shadow-2xl"
+        {/* 3. Modals & Overlays with smooth enter/exit animations */}
+        <AnimatePresence>
+          {gameState === 'PAUSED' && (
+            <motion.div
+              key="paused-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
             >
-              <h2 className="text-2xl font-black text-slate-900">GAME PAUSED</h2>
-              <p className="text-xs text-slate-400">Take your time. Word Hunt saves your progress!</p>
-              <div className="space-y-2 pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    soundManager.playTap();
-                    setGameState(activeChallenge ? 'CHALLENGE_PLAYING' : 'PLAYING');
-                  }}
-                  className="w-full py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
-                >
-                  RESUME PLAYING
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    soundManager.playTap();
-                    setGameState('MAIN_MENU');
-                  }}
-                  className="w-full py-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
-                >
-                  Quit to Menu
-                </motion.button>
-              </div>
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 15 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="w-full max-w-sm bg-white border border-slate-100 rounded-3xl p-6 text-center space-y-4 shadow-2xl"
+              >
+                <h2 className="text-2xl font-black text-slate-900">GAME PAUSED</h2>
+                <p className="text-xs text-slate-400">Take your time. Word Hunt saves your progress!</p>
+                <div className="space-y-2 pt-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      soundManager.playTap();
+                      setGameState(activeChallenge ? 'CHALLENGE_PLAYING' : 'PLAYING');
+                    }}
+                    className="w-full py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+                  >
+                    RESUME PLAYING
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      soundManager.playTap();
+                      setGameState('MAIN_MENU');
+                    }}
+                    className="w-full py-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                  >
+                    Quit to Menu
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
-          </div>
-        )}
+          )}
 
-        {/* 4. Simple Clean Level Complete Win Modal */}
-        {gameState === 'LEVEL_COMPLETE' && currentPuzzle && (
-          <LevelCompleteModal
-            starsAwarded={hintsUsedInLevel >= 3 ? 1 : hintsUsedInLevel >= 1 ? 2 : 3}
-            language={settings.language}
-            onNextLevel={handleNextLevel}
-          />
-        )}
+          {/* 4. Simple Clean Level Complete Win Modal */}
+          {gameState === 'LEVEL_COMPLETE' && currentPuzzle && (
+            <LevelCompleteModal
+              key="modal-level-complete"
+              starsAwarded={hintsUsedInLevel >= 3 ? 1 : hintsUsedInLevel >= 1 ? 2 : 3}
+              language={settings.language}
+              onNextLevel={handleNextLevel}
+            />
+          )}
 
-        {/* 5. Rewarded Ad Modal (Hint) */}
-        {isRewardedAdOpen && (
-          <RewardedAdModal
-            language={settings.language}
-            onReward={handleRewardedAdReward}
-            onCancel={handleRewardedAdCancel}
-            onClose={() => setIsRewardedAdOpen(false)}
-          />
-        )}
+          {/* 5. Rewarded Ad Modal (Hint) */}
+          {isRewardedAdOpen && (
+            <RewardedAdModal
+              key="modal-rewarded-ad"
+              language={settings.language}
+              onReward={handleRewardedAdReward}
+              onCancel={handleRewardedAdCancel}
+              onClose={() => setIsRewardedAdOpen(false)}
+            />
+          )}
 
-        {/* 6. Interstitial Ad Modal (Every 10 Levels) */}
-        {isInterstitialAdOpen && (
-          <InterstitialAdModal
-            completedLevel={milestoneAdLevel}
-            language={settings.language}
-            onClose={handleInterstitialAdClose}
-          />
-        )}
+          {/* 6. Interstitial Ad Modal (Every 10 Levels) */}
+          {isInterstitialAdOpen && (
+            <InterstitialAdModal
+              key="modal-interstitial-ad"
+              completedLevel={milestoneAdLevel}
+              language={settings.language}
+              onClose={handleInterstitialAdClose}
+            />
+          )}
 
-        {/* 7. Word Learning Drawer */}
-        <WordDefinitionDrawer
-          word={selectedWordForInfo}
-          onClose={() => setSelectedWordForInfo(null)}
-        />
+          {/* 7. Word Learning Drawer */}
+          {selectedWordForInfo && (
+            <WordDefinitionDrawer
+              key="drawer-word-definition"
+              word={selectedWordForInfo}
+              onClose={() => setSelectedWordForInfo(null)}
+            />
+          )}
 
-        {/* 8. Onboarding Tutorial Guide */}
-        {showTutorial && (
-          <TutorialOverlay
-            onComplete={() => {
-              setShowTutorial(false);
-              startLevel(1);
-            }}
-          />
-        )}
+          {/* 8. Onboarding Tutorial Guide */}
+          {showTutorial && (
+            <TutorialOverlay
+              key="modal-tutorial-guide"
+              onComplete={() => {
+                setShowTutorial(false);
+                startLevel(1);
+              }}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
