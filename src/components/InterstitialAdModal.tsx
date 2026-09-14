@@ -63,7 +63,7 @@ export const InterstitialAdModal: React.FC<Props> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+      className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 select-none"
     >
       <motion.div
         id="interstitial-ad-modal"

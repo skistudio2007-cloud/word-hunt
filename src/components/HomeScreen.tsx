@@ -81,7 +81,7 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
         </motion.button>
 
         {/* Current Theme World & Level Badge */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/85 backdrop-blur-xs border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs">
           <span className="text-sm">{world.bgDecorations[0] || '🌿'}</span>
           <span className="text-xs font-black text-slate-800 tracking-wide uppercase">
             {world.name}

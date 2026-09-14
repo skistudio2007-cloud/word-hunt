@@ -58,7 +58,7 @@ const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, on
           ? 'bg-slate-100/90 text-slate-400 line-through border border-slate-200'
           : highContrast
           ? 'bg-white text-slate-900 border-2 border-slate-900'
-          : 'bg-white/95 text-slate-900 border border-slate-200/90 hover:border-blue-400 backdrop-blur-xs'
+          : 'bg-white text-slate-900 border border-slate-200 hover:border-blue-400'
       }`}
       title={word.found ? 'Tap to view definition' : undefined}
     >

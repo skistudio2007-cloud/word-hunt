@@ -405,7 +405,7 @@ export default function App() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="fixed top-3 z-50 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-slate-900/90 text-white text-xs font-bold shadow-xl backdrop-blur-xs flex items-center gap-2 pointer-events-none border border-slate-700/50"
+              className="fixed top-3 z-50 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-slate-900/95 text-white text-xs font-bold shadow-xl flex items-center gap-2 pointer-events-none border border-slate-700/50"
             >
               <span>✨</span>
               <span>{toastMessage}</span>
@@ -563,7 +563,7 @@ export default function App() {
 
             {/* Bottom Educational Hint Tip */}
             <footer className="text-center pt-2 relative z-10">
-              <p className="text-[11px] font-bold text-slate-600/90 bg-white/60 backdrop-blur-xs py-1 px-3 rounded-full inline-block shadow-2xs">
+              <p className="text-[11px] font-bold text-slate-700 bg-white/95 py-1 px-3 rounded-full inline-block shadow-2xs border border-slate-200/60">
                 💡 Swipe letters to find words
               </p>
             </footer>
@@ -579,7 +579,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 bg-slate-950/75 flex items-center justify-center p-4"
             >
               <motion.div 
                 initial={{ scale: 0.9, opacity: 0, y: 15 }}

@@ -45,25 +45,30 @@ export const LetterGrid: React.FC<Props> = ({
 
   const gridSize = grid.length;
 
-  // Helper to determine cell at client coordinate (Zero layout thrashing - uses cached rect)
+  // Helper to determine cell at client coordinate (Zero layout thrashing - uses cached rect & bounds clamping)
   const getCellFromPointer = useCallback(
     (clientX: number, clientY: number): Coordinate | null => {
       const rect = cachedRectRef.current || (containerRef.current ? containerRef.current.getBoundingClientRect() : null);
       if (!rect) return null;
+
+      // Allow 24px padding tolerance around the board edge so fast edge swipes don't break
       if (
-        clientX < rect.left ||
-        clientX > rect.right ||
-        clientY < rect.top ||
-        clientY > rect.bottom
+        clientX < rect.left - 24 ||
+        clientX > rect.right + 24 ||
+        clientY < rect.top - 24 ||
+        clientY > rect.bottom + 24
       ) {
         return null;
       }
 
+      const clampedX = Math.max(rect.left, Math.min(rect.right - 1, clientX));
+      const clampedY = Math.max(rect.top, Math.min(rect.bottom - 1, clientY));
+
       const colWidth = rect.width / gridSize;
       const rowHeight = rect.height / gridSize;
 
-      const col = Math.floor((clientX - rect.left) / colWidth);
-      const row = Math.floor((clientY - rect.top) / rowHeight);
+      const col = Math.floor((clampedX - rect.left) / colWidth);
+      const row = Math.floor((clampedY - rect.top) / rowHeight);
 
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
         return { row, col };
@@ -127,7 +132,9 @@ export const LetterGrid: React.FC<Props> = ({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isCompleting) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
     if (containerRef.current) {
       cachedRectRef.current = containerRef.current.getBoundingClientRect();
     }
@@ -285,8 +292,10 @@ export const LetterGrid: React.FC<Props> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
-          className={`w-full h-full grid gap-1.5 relative select-none ${isCompleting ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
+          onTouchMove={(e) => e.preventDefault()}
+          className={`w-full h-full grid gap-1.5 relative select-none touch-none ${isCompleting ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
           style={{
+            touchAction: 'none',
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
@@ -313,7 +322,7 @@ export const LetterGrid: React.FC<Props> = ({
                       : 'scale-100 z-10'
                   } ${
                     selected
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
                       : isHinted
                       ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
                       : isFound
@@ -323,12 +332,16 @@ export const LetterGrid: React.FC<Props> = ({
                   style={
                     !selected && isFound && primaryFoundColor
                       ? {
-                          backgroundColor: `${primaryFoundColor}22`,
-                          borderColor: `${primaryFoundColor}90`,
-                          borderWidth: '2px',
+                          touchAction: 'none',
+                          backgroundColor: `${primaryFoundColor}20`,
+                          borderColor: primaryFoundColor,
+                          borderWidth: '2.5px',
+                          borderStyle: 'solid',
                           color: primaryFoundColor
                         }
-                      : undefined
+                      : {
+                          touchAction: 'none'
+                        }
                   }
                 >
                   {/* Glowing Hint Indicator */}

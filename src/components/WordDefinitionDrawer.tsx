@@ -28,7 +28,7 @@ export const WordDefinitionDrawer: React.FC<Props> = ({ word, onClose }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 select-none"
+      className="fixed inset-0 z-50 bg-slate-950/75 flex items-end sm:items-center justify-center p-0 sm:p-4 select-none"
       onClick={onClose}
     >
       <motion.div

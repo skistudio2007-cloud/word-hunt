@@ -83,22 +83,28 @@ jobs:
           name: WordHunt-debug-aab
           path: android/app/build/outputs/bundle/debug/*.aab
 
-      - name: Create or Update GitHub Release v1.0.3
+      - name: Prepare Named Release Assets
+        run: |
+          mkdir -p release-assets
+          cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
+          cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
+
+      - name: Create or Update GitHub Release v1.0.4
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.3
-          name: "Word Hunt v1.0.3 - Smooth Animations & No White Screen Fix"
+          tag_name: v1.0.4
+          name: "Word Hunt v1.0.4 - Zero-Crash Native Confetti & Touch Fix"
           body: |
-            ### 🎮 Word Hunt v1.0.3
+            ### 🎮 Word Hunt v1.0.4
 
-            - 🚀 **White Screen Fix**: Fixed level completion screen transitioning into a blank white screen; game board stays visible cleanly beneath the celebration modal.
-            - 🎨 **Screen Fluctuation Fix**: Removed full-board shake and converted background particle coordinates to percentages to eliminate viewport resize jitter.
-            - ✨ **Silky Smooth Animations**: Added instant reactive tile selection highlighting and vibrant found word borders with celebratory letter pop.
-            - 📱 **Real AdMob Ads Integration**: Rewarded hints and interstitial milestone ads are active with your production AdMob IDs.
+            - 🚀 **Zero White Screen**: Replaced `canvas-confetti` with pure native DOM spring particles, completely eliminating Android WebView GPU/worker context crashes.
+            - 🎨 **Screen Fluctuation Elimination**: Removed `backdrop-blur` filters across all modals and overlays, stopping repainting flickers.
+            - ✨ **Touch Swipe Fix**: Added `touch-action: none` directly to grid containers and letter cells, preventing Android gesture cancellations.
+            - 🌈 **Vibrant Found Word Borders**: Solid 2.5px color borders and celebratory letter pops on found words.
           files: |
-            android/app/build/outputs/apk/debug/*.apk
-            android/app/build/outputs/bundle/debug/*.aab
+            release-assets/WordHunt-debug.apk
+            release-assets/WordHunt-debug.aab
 
 
   # 2. Build & Deploy Web Game to GitHub Pages

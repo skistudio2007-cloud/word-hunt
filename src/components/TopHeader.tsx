@@ -46,7 +46,7 @@ export const TopHeader: React.FC<Props> = ({
           soundManager.playTap();
           onBack();
         }}
-        className="w-10 h-10 rounded-2xl bg-white/90 hover:bg-white text-slate-700 shadow-sm border border-slate-200/80 flex items-center justify-center transition-colors cursor-pointer backdrop-blur-xs"
+        className="w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
         title="Go back"
       >
         <ArrowLeft className="w-5 h-5" />
@@ -65,7 +65,7 @@ export const TopHeader: React.FC<Props> = ({
             </div>
           )}
         </div>
-        <div className="mt-0.5 px-3 py-0.5 rounded-full bg-white/90 border border-slate-200/80 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-2xs backdrop-blur-xs">
+        <div className="mt-0.5 px-3 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-2xs">
           {themeName}
         </div>
       </div>
@@ -112,7 +112,7 @@ export const TopHeader: React.FC<Props> = ({
               soundManager.playTap();
               onPause();
             }}
-            className="w-10 h-10 rounded-2xl bg-white/90 hover:bg-white text-slate-700 shadow-sm border border-slate-200/80 flex items-center justify-center transition-colors cursor-pointer backdrop-blur-xs"
+            className="w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
             title="Pause game"
           >
             <Pause className="w-4 h-4" />

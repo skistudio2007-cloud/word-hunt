@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import confetti from 'canvas-confetti';
-import { Star, Check, ArrowRight } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { motion } from 'motion/react';
+import { Star, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { soundManager } from '../services/sound';
 import { LanguageCode } from '../types';
 import { getTranslation } from '../services/localization';
@@ -11,6 +10,22 @@ interface Props {
   language?: LanguageCode;
   onNextLevel: () => void;
 }
+
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  rotate: number;
+  scale: number;
+  color: string;
+  delay: number;
+  size: number;
+  isRound: boolean;
+}
+
+const CELEBRATION_COLORS = [
+  '#2563EB', '#38BDF8', '#F59E0B', '#10B981', '#EC4899', '#8B5CF6', '#FBBF24', '#06B6D4'
+];
 
 export const LevelCompleteModal: React.FC<Props> = ({
   starsAwarded = 3,
@@ -22,56 +37,30 @@ export const LevelCompleteModal: React.FC<Props> = ({
   const levelCompleteText = getTranslation(language, 'levelComplete') || 'LEVEL COMPLETE';
   const nextText = getTranslation(language, 'nextLevel') || 'NEXT';
 
-  useEffect(() => {
-    // Multi-stage celebration confetti particle cannons
-    try {
-      // 1. Center victory burst when modal pops open
-      confetti({
-        particleCount: 75,
-        spread: 75,
-        origin: { x: 0.5, y: 0.55 },
-        zIndex: 999,
-        colors: ['#2563EB', '#38BDF8', '#F59E0B', '#10B981', '#EC4899', '#8B5CF6', '#FBBF24']
+  // Generate lightweight, festive celebration particles (pure DOM, zero Canvas/Worker crashes)
+  const particles = useMemo<Particle[]>(() => {
+    const list: Particle[] = [];
+    const count = 28;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * 2 * Math.PI;
+      const distance = 90 + (i % 5) * 35;
+      list.push({
+        id: i,
+        x: Math.cos(angle) * distance,
+        y: Math.sin(angle) * distance - 20,
+        rotate: (i * 45) % 360,
+        scale: 0.7 + (i % 3) * 0.25,
+        color: CELEBRATION_COLORS[i % CELEBRATION_COLORS.length],
+        delay: (i % 6) * 0.04,
+        size: 8 + (i % 3) * 4,
+        isRound: i % 2 === 0
       });
-    } catch {}
+    }
+    return list;
+  }, []);
 
-    // 2. Dual side cannons cross-fire across the screen
-    const tCannons = setTimeout(() => {
-      try {
-        confetti({
-          particleCount: 50,
-          angle: 60,
-          spread: 60,
-          origin: { x: 0.08, y: 0.78 },
-          zIndex: 999,
-          colors: ['#F59E0B', '#FBBF24', '#2563EB', '#10B981', '#EC4899']
-        });
-        confetti({
-          particleCount: 50,
-          angle: 120,
-          spread: 60,
-          origin: { x: 0.92, y: 0.78 },
-          zIndex: 999,
-          colors: ['#F59E0B', '#FBBF24', '#2563EB', '#10B981', '#EC4899']
-        });
-      } catch {}
-    }, 220);
-
-    // 3. Gold sparkle burst shower on final star pop
-    const tSparkles = setTimeout(() => {
-      try {
-        confetti({
-          particleCount: 45,
-          spread: 90,
-          origin: { x: 0.5, y: 0.42 },
-          scalar: 1.15,
-          zIndex: 999,
-          colors: ['#F59E0B', '#FCD34D', '#FFFFFF', '#60A5FA', '#34D399']
-        });
-      } catch {}
-    }, 840);
-
-    // Sequentially trigger star pop animation
+  useEffect(() => {
+    // Sequentially trigger star pop animation with cheerful audio
     const t1 = setTimeout(() => {
       setActiveStars(1);
       soundManager.playStarPop(0);
@@ -92,8 +81,6 @@ export const LevelCompleteModal: React.FC<Props> = ({
     }, 820);
 
     return () => {
-      clearTimeout(tCannons);
-      clearTimeout(tSparkles);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
@@ -107,25 +94,64 @@ export const LevelCompleteModal: React.FC<Props> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-6 select-none"
+      className="fixed inset-0 z-50 bg-slate-950/75 flex items-center justify-center p-6 select-none overflow-hidden"
     >
+      {/* Native DOM Celebration Confetti Particles Burst (Zero GPU/Worker crashes) */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
+        {particles.map((p) => (
+          <motion.div
+            key={`particle-${p.id}`}
+            initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
+            animate={{
+              x: [0, p.x, p.x * 1.25],
+              y: [0, p.y, p.y + 120],
+              opacity: [0, 1, 0.85, 0],
+              scale: [0, p.scale, p.scale * 0.8],
+              rotate: [0, p.rotate, p.rotate + 180]
+            }}
+            transition={{
+              duration: 2.2,
+              delay: p.delay,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            style={{
+              position: 'absolute',
+              width: `${p.size}px`,
+              height: p.isRound ? `${p.size}px` : `${p.size * 1.8}px`,
+              borderRadius: p.isRound ? '9999px' : '3px',
+              backgroundColor: p.color,
+              boxShadow: `0 0 8px ${p.color}80`
+            }}
+          />
+        ))}
+      </div>
+
       <motion.div
         id="level-complete-card"
         initial={{ scale: 0.86, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.88, opacity: 0, y: 12 }}
         transition={{ type: 'spring', damping: 24, stiffness: 350 }}
-        className="w-full max-w-xs bg-white rounded-3xl p-8 shadow-2xl text-slate-900 text-center relative flex flex-col items-center space-y-6 border border-slate-100 overflow-visible"
+        className="w-full max-w-xs bg-white rounded-3xl p-8 shadow-2xl text-slate-900 text-center relative z-10 flex flex-col items-center space-y-6 border border-slate-100 overflow-visible"
       >
-        {/* 1. Winning Icon / Checkmark Animation */}
-        <motion.div
-          initial={{ scale: 0, rotate: -30 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', damping: 16, stiffness: 300 }}
-          className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border-2 border-emerald-200 shadow-sm"
-        >
-          <Check className="w-9 h-9 stroke-[3]" />
-        </motion.div>
+        {/* 1. Winning Icon / Checkmark Animation with floating sparkles */}
+        <div className="relative">
+          <motion.div
+            initial={{ scale: 0, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', damping: 16, stiffness: 300 }}
+            className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border-2 border-emerald-200 shadow-sm"
+          >
+            <Check className="w-9 h-9 stroke-[3]" />
+          </motion.div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            className="absolute -top-2 -right-2 text-amber-400"
+          >
+            <Sparkles className="w-6 h-6 fill-amber-300" />
+          </motion.div>
+        </div>
 
         {/* 2. Simple LEVEL COMPLETE Text */}
         <motion.h2 
