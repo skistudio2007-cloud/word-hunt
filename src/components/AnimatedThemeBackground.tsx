@@ -170,55 +170,22 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       id="animated-theme-background" 
       className="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none bg-white"
     >
-      {/* 1. Subtle Ambient Gradient Orbs on Pure White */}
-      <motion.div
-        animate={{
-          x: [0, 40, -30, 0],
-          y: [0, -50, 30, 0],
-          scale: [1, 1.2, 0.95, 1],
-          opacity: [0.4, 0.7, 0.45, 0.4]
-        }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: 'easeInOut'
-        }}
-        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl"
+      {/* 1. Hardware-Accelerated Ambient Gradient Background (Zero GPU Blur Penalty) */}
+      <div
+        className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
         style={{ background: themeStyles.blob1 }}
       />
-
-      <motion.div
-        animate={{
-          x: [0, -45, 35, 0],
-          y: [0, 50, -40, 0],
-          scale: [1, 1.15, 0.9, 1],
-          opacity: [0.35, 0.65, 0.4, 0.35]
-        }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: 'easeInOut'
-        }}
-        className="absolute -bottom-32 -right-32 w-[420px] h-[420px] rounded-full blur-3xl"
+      <div
+        className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
         style={{ background: themeStyles.blob2 }}
       />
-
-      <motion.div
-        animate={{
-          scale: [0.85, 1.15, 0.85],
-          opacity: [0.3, 0.6, 0.3]
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: 'easeInOut'
-        }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-2xl"
+      <div
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60"
         style={{ background: themeStyles.blob3 }}
       />
 
-      {/* 2. Floating Letter Tile Runes (Layer 2) */}
-      {letterTiles.map((tile) => (
+      {/* 2. Floating Letter Tile Runes (Only on Home screen to keep gameplay 100% smooth) */}
+      {variant === 'home' && letterTiles.map((tile) => (
         <motion.div
           key={`tile-${tile.id}`}
           initial={{
@@ -230,19 +197,18 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
           animate={{
             x: [
               `${tile.x}vw`,
-              `${tile.x + 8}vw`,
-              `${tile.x - 8}vw`,
+              `${tile.x + 4}vw`,
+              `${tile.x - 4}vw`,
               `${tile.x}vw`
             ],
             y: [
               `${tile.y}vh`,
-              `${tile.y - 18}vh`,
-              `${tile.y + 12}vh`,
+              `${tile.y - 12}vh`,
+              `${tile.y + 8}vh`,
               `${tile.y}vh`
             ],
-            rotate: [-8, 8, -6, -8],
-            opacity: [0.22, 0.45, 0.28, 0.22],
-            scale: [0.95, 1.06, 0.95]
+            rotate: [-4, 4, -4],
+            opacity: [0.25, 0.45, 0.25]
           }}
           transition={{
             duration: tile.duration,
@@ -250,7 +216,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
             delay: tile.delay,
             ease: 'easeInOut'
           }}
-          className="absolute flex items-center justify-center font-black rounded-xl shadow-xs backdrop-blur-xs pointer-events-none"
+          className="absolute flex items-center justify-center font-black rounded-xl pointer-events-none shadow-xs"
           style={{
             width: `${tile.size}px`,
             height: `${tile.size}px`,
@@ -258,80 +224,28 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
             backgroundColor: themeStyles.tileBg,
             border: `1.5px solid ${themeStyles.tileBorder}`,
             color: themeStyles.tileText,
-            willChange: 'transform, opacity'
+            willChange: 'transform'
           }}
         >
           {tile.letter}
         </motion.div>
       ))}
 
-      {/* 3. Floating Theme-Specific Particles (Layer 3) */}
+      {/* 3. Subtle Floating Theme Particles (Lightweight) */}
       {particles.map((p) => {
-        let animateY: number[] = [0, -30, 20, 0];
-        let animateX: number[] = [0, 20, -20, 0];
-        let animateRotate: number[] = [0, 20, -20, 0];
-
-        if (themeType === 'ocean') {
-          // Bubbles rising smoothly with drift
-          animateY = [0, -55, -110, 0];
-          animateX = [0, -16, 16, 0];
-          animateRotate = [0, 10, -10, 0];
-        } else if (themeType === 'snow') {
-          // Snow drifting down with fluttering rotation
-          animateY = [0, 45, 90, 0];
-          animateX = [0, 20, -20, 0];
-          animateRotate = [0, 120, 240, 360];
-        } else if (themeType === 'space') {
-          // Cosmic twinkle & orbital pulse
-          animateY = [0, -15, 15, 0];
-          animateX = [0, 15, -15, 0];
-          animateRotate = [0, 60, 120, 180];
-        } else if (themeType === 'desert') {
-          // Desert heat shimmer drifting
-          animateY = [0, -35, -20, 0];
-          animateX = [0, 30, 15, 0];
-        }
-
         return (
-          <motion.div
+          <div
             key={`p-${p.id}`}
-            initial={{
-              x: `${p.x}vw`,
-              y: `${p.y}vh`,
-              opacity: p.opacity,
-              scale: 0.9
-            }}
-            animate={{
-              x: [
-                `${p.x}vw`,
-                `${p.x + animateX[1] * 0.45}vw`,
-                `${p.x + animateX[2] * 0.45}vw`,
-                `${p.x}vw`
-              ],
-              y: [
-                `${p.y}vh`,
-                `${p.y + animateY[1] * 0.55}vh`,
-                `${p.y + animateY[2] * 0.55}vh`,
-                `${p.y}vh`
-              ],
-              rotate: [p.rotation, p.rotation + animateRotate[1], p.rotation + animateRotate[2], p.rotation],
-              opacity: [p.opacity, p.opacity * 1.35, p.opacity * 0.65, p.opacity],
-              scale: [1, 1.15, 0.9, 1]
-            }}
-            transition={{
-              duration: p.duration,
-              repeat: Infinity,
-              delay: p.delay,
-              ease: 'easeInOut'
-            }}
-            className="absolute select-none filter drop-shadow-xs pointer-events-none"
+            className="absolute select-none pointer-events-none opacity-40 transition-transform"
             style={{
+              left: `${p.x}vw`,
+              top: `${p.y}vh`,
               fontSize: `${p.size}px`,
-              willChange: 'transform, opacity'
+              transform: `rotate(${p.rotation}deg)`
             }}
           >
             {p.item}
-          </motion.div>
+          </div>
         );
       })}
 

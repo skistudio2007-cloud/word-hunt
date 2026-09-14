@@ -21,6 +21,7 @@ export const LetterGrid: React.FC<Props> = ({
   isCompleting = false
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cachedRectRef = useRef<DOMRect | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [startCoord, setStartCoord] = useState<Coordinate | null>(null);
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
@@ -48,11 +49,11 @@ export const LetterGrid: React.FC<Props> = ({
 
   const gridSize = grid.length;
 
-  // Helper to determine cell at client coordinate
+  // Helper to determine cell at client coordinate (Zero layout thrashing - uses cached rect)
   const getCellFromPointer = useCallback(
     (clientX: number, clientY: number): Coordinate | null => {
-      if (!containerRef.current) return null;
-      const rect = containerRef.current.getBoundingClientRect();
+      const rect = cachedRectRef.current || (containerRef.current ? containerRef.current.getBoundingClientRect() : null);
+      if (!rect) return null;
       if (
         clientX < rect.left ||
         clientX > rect.right ||
@@ -131,6 +132,9 @@ export const LetterGrid: React.FC<Props> = ({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isCompleting) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    if (containerRef.current) {
+      cachedRectRef.current = containerRef.current.getBoundingClientRect();
+    }
     const cell = getCellFromPointer(e.clientX, e.clientY);
     if (!cell) return;
 
@@ -154,6 +158,7 @@ export const LetterGrid: React.FC<Props> = ({
   };
 
   const finishSelection = useCallback(() => {
+    cachedRectRef.current = null;
     if (!isSelecting || currentSelection.length === 0) {
       setIsSelecting(false);
       setStartCoord(null);
@@ -244,12 +249,14 @@ export const LetterGrid: React.FC<Props> = ({
     return map;
   }, [words]);
 
-  const isCellSelected = useCallback(
-    (row: number, col: number) => {
-      return currentSelection.some(c => c.row === row && c.col === col);
-    },
-    [currentSelection]
-  );
+  // O(1) lookup set for current dragging selection
+  const selectedSet = React.useMemo(() => {
+    const s = new Set<string>();
+    for (let i = 0; i < currentSelection.length; i++) {
+      s.add(`${currentSelection[i].row}-${currentSelection[i].col}`);
+    }
+    return s;
+  }, [currentSelection]);
 
   return (
     <div className="relative w-full max-w-[400px] aspect-square mx-auto p-1 sm:p-2 select-none touch-none">
@@ -268,10 +275,10 @@ export const LetterGrid: React.FC<Props> = ({
             ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
             : { x: 0, y: 0 }
         }
-        className={`w-full h-full rounded-3xl p-3 sm:p-4 shadow-2xl relative flex flex-col justify-between transition-all duration-300 ${
+        className={`w-full h-full rounded-3xl p-3 sm:p-4 shadow-xl relative flex flex-col justify-between transition-all duration-300 ${
           highContrast 
             ? 'bg-white border-4 border-slate-900 shadow-xl' 
-            : 'bg-white/95 backdrop-blur-md border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
+            : 'bg-white border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.08)]'
         }`}
       >
         {/* Interactive Letter Grid Container */}
@@ -333,52 +340,28 @@ export const LetterGrid: React.FC<Props> = ({
             )}
           </svg>
 
-          {/* Grid Cells with Navy Letters */}
+          {/* Grid Cells with Navy Letters - High Performance Hardware Accelerated */}
           {grid.map((rowArr, r) =>
             rowArr.map((letter, c) => {
-              const selected = isCellSelected(r, c);
-              const foundColors = foundCellsMap.get(`${r}-${c}`);
+              const cellKey = `${r}-${c}`;
+              const selected = selectedSet.has(cellKey);
+              const foundColors = foundCellsMap.get(cellKey);
               const isFound = foundColors && foundColors.length > 0;
               const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
               const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
 
               return (
-                <motion.div
-                  key={`cell-${r}-${c}`}
-                  id={`letter-cell-${r}-${c}`}
-                  initial={{
-                    y: -110 - r * 30,
-                    opacity: 0,
-                    scale: 0.5,
-                    rotate: (r + c) % 2 === 0 ? -10 : 10
-                  }}
-                  animate={
+                <div
+                  key={`cell-${cellKey}`}
+                  id={`letter-cell-${cellKey}`}
+                  className={`relative flex items-center justify-center rounded-xl font-black select-none transition-transform duration-100 ease-out will-change-transform ${
                     isJustFound
-                      ? {
-                          scale: [1, 1.15, 0.96, 1],
-                          rotate: [0, -2, 2, -1, 0],
-                          transition: { duration: 0.35, ease: 'easeOut' }
-                        }
-                      : {
-                          y: 0,
-                          opacity: 1,
-                          scale: selected ? 1.05 : 1,
-                          rotate: 0,
-                          transition: {
-                            type: 'spring',
-                            damping: 14,
-                            stiffness: 250,
-                            mass: 0.75,
-                            delay: r * 0.045 + c * 0.02
-                          }
-                        }
-                  }
-                  className={`relative flex items-center justify-center rounded-xl font-black transition-all duration-150 ease-out select-none ${
-                    selected
+                      ? 'scale-110 -rotate-1 z-30'
+                      : selected
                       ? 'scale-105 z-20'
                       : isFound
                       ? 'scale-100 z-15'
-                      : 'scale-100 z-10 hover:scale-105'
+                      : 'scale-100 z-10'
                   }`}
                 >
                   {/* Glowing Hint Indicator */}
@@ -391,14 +374,14 @@ export const LetterGrid: React.FC<Props> = ({
 
                   {/* Tile Surface */}
                   <div
-                    className={`absolute inset-0.5 rounded-xl transition-all duration-200 ${
+                    className={`absolute inset-0.5 rounded-xl transition-colors duration-150 ${
                       selected
                         ? 'bg-blue-600 shadow-md shadow-blue-500/30'
                         : isHinted
                         ? 'bg-amber-100 border-2 border-amber-500 shadow-md shadow-amber-500/30 ring-2 ring-amber-400/50 animate-pulse'
                         : isFound
                         ? 'bg-slate-100/80 shadow-xs'
-                        : 'bg-slate-50/70 hover:bg-slate-100 border border-slate-100'
+                        : 'bg-slate-50/80 border border-slate-100'
                     }`}
                   />
 
@@ -422,7 +405,7 @@ export const LetterGrid: React.FC<Props> = ({
                   >
                     {letter}
                   </span>
-                </motion.div>
+                </div>
               );
             })
           )}
