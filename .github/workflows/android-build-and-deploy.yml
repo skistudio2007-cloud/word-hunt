@@ -89,20 +89,22 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.7
+      - name: Create or Update GitHub Release v1.0.8
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.7
-          name: "Word Hunt v1.0.7 - Zero-Lag Level Gameplay & Optimized 120 FPS Dragging"
+          tag_name: v1.0.8
+          name: "Word Hunt v1.0.8 - Real Google AdMob Ads & Live Gameplay Animations"
           body: |
-            ### 🎮 Word Hunt v1.0.7 - Zero-Lag Level Gameplay & Optimized 120 FPS Dragging
+            ### 🎮 Word Hunt v1.0.8 - Real Google AdMob Ads & Live Gameplay Animations
 
-            - 🚀 **React.memo LetterCell Isolation**: Extracted individual letter tiles into memoized components. Dragging across letters now re-renders only the active tile instead of all 64 cells, dropping CPU work by 95%+.
-            - ⚡ **Targeted CSS Transitions**: Removed expensive `transition-all` and GPU texture bloat `will-change: transform` across all 64 static tiles; only active & popping tiles engage GPU transforms.
-            - 💎 **Background Overdraw Elimination**: Removed center gradient bloat and reduced background particles during active level gameplay for maximum Adreno/Mali GPU fillrate.
-            - 🎉 **Buttery Smooth Victory Celebration**: Streamlined victory fanfare particles with hardware-accelerated transforms for 0 frame drops on level complete.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 7 and `versionName` to 1.0.7.
+            - 💰 **Real Google AdMob Ads**: Configured official production App ID (`ca-app-pub-2007565791914092~7531337749`), Rewarded Ad unit (`ca-app-pub-2007565791914092/1828806113`), and Interstitial Ad unit (`ca-app-pub-2007565791914092/4518161594`) without test ad fallbacks.
+            - 🛡️ **Android 13+ Advertising ID Permission**: Added `com.google.android.gms.permission.AD_ID` so modern Android devices can serve targeted production ads.
+            - 🌊 **Staggered Tile Drop-in Entry**: Grid letters now cascade down from top with bouncy spring physics on level entry.
+            - ✨ **Word Selection & Found Pop Animations**: Active swiped tiles scale up dynamically, and found words pop with celebratory jumps and sound chimes.
+            - 🏆 **Premium Win View Celebration**: Rotating golden sunburst rays, 3D golden trophy badge, 3-star golden ripple waves (`animate-ping`), and falling fluttering confetti.
+            - 🚀 **Zero-Lag Swiping**: Removed swipe vibration IPC calls and 35px blur shadow for true 60–120 FPS responsiveness.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 8 and `versionName` to 1.0.8.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab

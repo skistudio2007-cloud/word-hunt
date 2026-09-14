@@ -63,31 +63,21 @@ class AdMobService {
   }
 
   /**
-   * Pre-loads a rewarded video ad in memory.
+   * Pre-loads a real Google AdMob rewarded video ad in memory.
    */
   public async preloadRewardVideo(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     try {
-      // 1. Attempt loading User Production Ad Unit
       await AdMob.prepareRewardVideoAd({
-        adId: this.config.isTestMode ? GOOGLE_TEST_REWARDED_ID : this.config.rewardedAdUnitId
+        adId: this.config.rewardedAdUnitId
       });
       this.isRewardedReady = true;
+      console.log('✅ Real AdMob Rewarded Video preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('Production rewarded ad failed to load, trying test fallback:', err);
-      try {
-        // 2. Fallback to Google sample test unit if production is unapproved or no-fill
-        await AdMob.prepareRewardVideoAd({
-          adId: GOOGLE_TEST_REWARDED_ID
-        });
-        this.isRewardedReady = true;
-        return true;
-      } catch (fallbackErr) {
-        console.error('Rewarded ad preparation failed completely:', fallbackErr);
-        this.isRewardedReady = false;
-        return false;
-      }
+      console.warn('⚠️ Real AdMob Rewarded Video failed to prepare:', err);
+      this.isRewardedReady = false;
+      return false;
     }
   }
 
@@ -130,28 +120,21 @@ class AdMobService {
   }
 
   /**
-   * Pre-loads an interstitial ad in memory.
+   * Pre-loads a real Google AdMob interstitial ad in memory.
    */
   public async preloadInterstitial(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     try {
       await AdMob.prepareInterstitial({
-        adId: this.config.isTestMode ? GOOGLE_TEST_INTERSTITIAL_ID : this.config.interstitialAdUnitId
+        adId: this.config.interstitialAdUnitId
       });
       this.isInterstitialReady = true;
+      console.log('✅ Real AdMob Interstitial preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('Production interstitial ad failed to load, trying test fallback:', err);
-      try {
-        await AdMob.prepareInterstitial({
-          adId: GOOGLE_TEST_INTERSTITIAL_ID
-        });
-        this.isInterstitialReady = true;
-        return true;
-      } catch {
-        this.isInterstitialReady = false;
-        return false;
-      }
+      console.warn('⚠️ Real AdMob Interstitial failed to prepare:', err);
+      this.isInterstitialReady = false;
+      return false;
     }
   }
 

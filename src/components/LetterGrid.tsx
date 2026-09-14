@@ -14,6 +14,8 @@ interface Props {
 
 interface LetterCellProps {
   cellKey: string;
+  rowIndex: number;
+  colIndex: number;
   letter: string;
   gridSize: number;
   isSelected: boolean;
@@ -21,11 +23,14 @@ interface LetterCellProps {
   primaryFoundColor?: string;
   isHinted: boolean;
   isJustFound: boolean;
+  isCompleting: boolean;
 }
 
 const LetterCell = React.memo<LetterCellProps>(
   ({
     cellKey,
+    rowIndex,
+    colIndex,
     letter,
     gridSize,
     isSelected,
@@ -33,16 +38,22 @@ const LetterCell = React.memo<LetterCellProps>(
     primaryFoundColor,
     isHinted,
     isJustFound,
+    isCompleting,
   }) => {
+    const dropDelay = `${(rowIndex * gridSize + colIndex) * 0.022}s`;
+    const victoryDelay = `${(rowIndex + colIndex) * 0.045}s`;
+
     return (
       <div
         id={`letter-cell-${cellKey}`}
         className={`relative flex items-center justify-center rounded-xl font-black transition-[transform,background-color,color] duration-100 ease-out select-none ${
-          isJustFound
-            ? 'scale-115 -rotate-1 z-30 transform-gpu'
+          isCompleting
+            ? 'anim-victory-wave z-20 transform-gpu'
+            : isJustFound
+            ? 'anim-word-pop z-30 transform-gpu'
             : isSelected
-            ? 'scale-105 z-20 transform-gpu'
-            : 'scale-100 z-10'
+            ? 'scale-110 -rotate-1 z-20 transform-gpu'
+            : 'scale-100 z-10 anim-tile-drop'
         } ${
           isSelected
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
@@ -52,20 +63,19 @@ const LetterCell = React.memo<LetterCellProps>(
             ? 'shadow-xs font-black'
             : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
         }`}
-        style={
-          !isSelected && isFound && primaryFoundColor
+        style={{
+          touchAction: 'none',
+          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay,
+          ...(!isSelected && isFound && primaryFoundColor
             ? {
-                touchAction: 'none',
                 backgroundColor: `${primaryFoundColor}20`,
                 borderColor: primaryFoundColor,
                 borderWidth: '2.5px',
                 borderStyle: 'solid',
                 color: primaryFoundColor
               }
-            : {
-                touchAction: 'none'
-              }
-        }
+            : {})
+        }}
       >
         {/* Glowing Hint Indicator */}
         {isHinted && (
@@ -103,6 +113,7 @@ const LetterCell = React.memo<LetterCellProps>(
       prev.primaryFoundColor === next.primaryFoundColor &&
       prev.isHinted === next.isHinted &&
       prev.isJustFound === next.isJustFound &&
+      prev.isCompleting === next.isCompleting &&
       prev.gridSize === next.gridSize
     );
   }
@@ -426,10 +437,10 @@ export const LetterGrid: React.FC<Props> = ({
             ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
             : { x: 0, y: 0 }
         }
-        className={`w-full h-full rounded-3xl p-3 sm:p-4 shadow-xl relative flex flex-col justify-between transition-colors duration-300 ${
+        className={`w-full h-full rounded-3xl p-3 sm:p-4 relative flex flex-col justify-between transition-colors duration-300 ${
           highContrast 
             ? 'bg-white border-4 border-slate-900 shadow-xl' 
-            : 'bg-white border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.08)]'
+            : 'bg-white border border-slate-200/90 shadow-lg'
         }`}
       >
         {/* Interactive Letter Grid Container */}
@@ -499,6 +510,8 @@ export const LetterGrid: React.FC<Props> = ({
                 <LetterCell
                   key={`cell-${cellKey}`}
                   cellKey={cellKey}
+                  rowIndex={r}
+                  colIndex={c}
                   letter={letter}
                   gridSize={gridSize}
                   isSelected={selected}
@@ -506,6 +519,7 @@ export const LetterGrid: React.FC<Props> = ({
                   primaryFoundColor={primaryFoundColor}
                   isHinted={isHinted}
                   isJustFound={isJustFound}
+                  isCompleting={isCompleting}
                 />
               );
             })

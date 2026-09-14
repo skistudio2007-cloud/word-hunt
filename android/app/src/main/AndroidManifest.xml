@@ -48,4 +48,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Required for real Google AdMob ads on Android 13+ (API 33+) -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>

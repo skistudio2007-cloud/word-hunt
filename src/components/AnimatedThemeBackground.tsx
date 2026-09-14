@@ -84,14 +84,23 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       const pseudoRand3 = Math.sin(levelNumber * 350 + i * 89) * 10000;
       const r3 = Math.abs(pseudoRand3 - Math.floor(pseudoRand3));
 
+      let x = Math.floor(r1 * 82) + 9;
+      let y = Math.floor(r2 * 82) + 9;
+      if (variant === 'gameplay') {
+        if (i % 4 === 0) y = 4 + Math.floor(r2 * 10);
+        else if (i % 4 === 1) y = 86 + Math.floor(r2 * 8);
+        else if (i % 4 === 2) x = 3 + Math.floor(r1 * 6);
+        else x = 91 + Math.floor(r1 * 6);
+      }
+
       list.push({
         id: i,
         letter: letters[(i + levelNumber) % letters.length],
-        x: Math.floor(r1 * 82) + 9,
-        y: Math.floor(r2 * 82) + 9,
+        x,
+        y,
         size: 26 + Math.floor(r3 * 10),
-        duration: 12 + Math.floor(r1 * 10),
-        delay: Math.floor(r2 * 6)
+        duration: 8 + Math.floor(r1 * 6),
+        delay: Math.floor(r2 * 4)
       });
     }
 
@@ -172,43 +181,27 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
     >
       {/* 1. Hardware-Accelerated Ambient Gradient Background (Zero GPU Blur Penalty) */}
       <div
-        className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
-        style={{ background: themeStyles.blob1, transform: 'translateZ(0)' }}
+        className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80 anim-bg-pulse"
+        style={{ background: themeStyles.blob1 }}
       />
       <div
-        className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
-        style={{ background: themeStyles.blob2, transform: 'translateZ(0)' }}
+        className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80 anim-bg-pulse"
+        style={{ background: themeStyles.blob2, animationDelay: '4s' }}
       />
       {variant === 'home' && (
         <div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60"
-          style={{ background: themeStyles.blob3, transform: 'translateZ(0)' }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60 anim-bg-pulse"
+          style={{ background: themeStyles.blob3, animationDelay: '2s' }}
         />
       )}
 
-      {/* 2. Floating Letter Tile Runes (Only on Home screen to keep gameplay 100% smooth) */}
-      {variant === 'home' && letterTiles.map((tile) => (
-        <motion.div
+      {/* 2. Floating Letter Tile Runes (Pure GPU Compositor CSS Animations) */}
+      {letterTiles.map((tile, idx) => (
+        <div
           key={`tile-${tile.id}`}
-          initial={{
-            x: 0,
-            y: 0,
-            opacity: 0,
-            scale: 0.8
-          }}
-          animate={{
-            x: [0, 14, -14, 0],
-            y: [0, -26, 16, 0],
-            rotate: [-5, 5, -5],
-            opacity: [0.25, 0.5, 0.25]
-          }}
-          transition={{
-            duration: tile.duration,
-            repeat: Infinity,
-            delay: tile.delay,
-            ease: 'easeInOut'
-          }}
-          className="absolute flex items-center justify-center font-black rounded-xl pointer-events-none shadow-xs"
+          className={`absolute flex items-center justify-center font-black rounded-xl pointer-events-none shadow-xs select-none ${
+            idx % 2 === 0 ? 'anim-bg-float-1' : 'anim-bg-float-2'
+          }`}
           style={{
             left: `${tile.x}%`,
             top: `${tile.y}%`,
@@ -218,24 +211,29 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
             backgroundColor: themeStyles.tileBg,
             border: `1.5px solid ${themeStyles.tileBorder}`,
             color: themeStyles.tileText,
-            willChange: 'transform'
+            opacity: variant === 'home' ? 0.45 : 0.22,
+            animationDuration: `${tile.duration}s`,
+            animationDelay: `${tile.delay}s`
           }}
         >
           {tile.letter}
-        </motion.div>
+        </div>
       ))}
 
-      {/* 3. Subtle Floating Theme Particles (Lightweight) */}
-      {particles.map((p) => {
+      {/* 3. Subtle Floating Theme Particles (Lively 60-120fps GPU Float) */}
+      {particles.map((p, idx) => {
         return (
           <div
             key={`p-${p.id}`}
-            className="absolute select-none pointer-events-none opacity-40 transition-transform"
+            className={`absolute select-none pointer-events-none opacity-50 ${
+              idx % 2 === 0 ? 'anim-bg-float-1' : 'anim-bg-float-2'
+            }`}
             style={{
               left: `${p.x}%`,
               top: `${p.y}%`,
               fontSize: `${p.size}px`,
-              transform: `rotate(${p.rotation}deg)`
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${p.delay}s`
             }}
           >
             {p.item}

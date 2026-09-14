@@ -125,8 +125,6 @@ class SoundEngine {
 
       osc.start(now);
       osc.stop(now + 0.09);
-
-      this.vibrate(10);
     } catch {}
   }
 

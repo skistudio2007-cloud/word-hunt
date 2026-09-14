@@ -26,3 +26,134 @@ html, body, #root {
   backface-visibility: hidden;
   perspective: 1000px;
 }
+
+/* Background floating & breathing animations (100% GPU Compositor Thread) */
+@keyframes bgFloat1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(8deg);
+  }
+}
+
+@keyframes bgFloat2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, 14px, 0) rotate(-7deg);
+  }
+}
+
+@keyframes bgPulseSoft {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale3d(1.08, 1.08, 1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes sunburstSpin {
+  from {
+    transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(-50%, -50%, 0) rotate(360deg);
+  }
+}
+
+@keyframes confettiFlutter {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(45deg) scale(1);
+  }
+  100% {
+    transform: translate3d(var(--tx, 0px), var(--ty, 350px), 0) rotate(var(--tr, 540deg)) scale(0.7);
+    opacity: 0;
+  }
+}
+
+.anim-bg-float-1 {
+  animation: bgFloat1 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.anim-bg-float-2 {
+  animation: bgFloat2 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.anim-bg-pulse {
+  animation: bgPulseSoft 8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.anim-sunburst {
+  animation: sunburstSpin 20s linear infinite;
+  will-change: transform;
+}
+
+/* Staggered Tile Drop-in entrance from top */
+@keyframes tileDropIn {
+  0% {
+    transform: translate3d(0, -65px, 0) scale(0.6);
+    opacity: 0;
+  }
+  65% {
+    transform: translate3d(0, 5px, 0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Energetic pop when a word is matched */
+@keyframes wordJustFoundPop {
+  0% {
+    transform: scale3d(1, 1, 1);
+  }
+  30% {
+    transform: scale3d(1.22, 1.22, 1) rotate(-2deg);
+  }
+  65% {
+    transform: scale3d(0.92, 0.92, 1) rotate(1.5deg);
+  }
+  100% {
+    transform: scale3d(1, 1, 1) rotate(0deg);
+  }
+}
+
+/* Celebratory victory wave across board */
+@keyframes victoryTileWave {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+  }
+  40% {
+    transform: scale3d(1.2, 1.2, 1) translate3d(0, -8px, 0);
+  }
+  75% {
+    transform: scale3d(0.94, 0.94, 1);
+  }
+}
+
+.anim-tile-drop {
+  animation: tileDropIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+.anim-word-pop {
+  animation: wordJustFoundPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.anim-victory-wave {
+  animation: victoryTileWave 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

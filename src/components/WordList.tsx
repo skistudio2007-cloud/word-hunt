@@ -90,20 +90,28 @@ const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, on
   );
 };
 
-export const WordList: React.FC<Props> = ({ words, onSelectWordForInfo, highContrast = false }) => {
-  return (
-    <div className="w-full max-w-[440px] mx-auto px-3 py-2 select-none">
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        {words.map((w, idx) => (
-          <TargetWordItem
-            key={`word-item-${w.id || idx}`}
-            word={w}
-            index={idx}
-            highContrast={highContrast}
-            onSelect={onSelectWordForInfo}
-          />
-        ))}
+export const WordList: React.FC<Props> = React.memo(
+  ({ words, onSelectWordForInfo, highContrast = false }) => {
+    return (
+      <div className="w-full max-w-[440px] mx-auto px-3 py-2 select-none">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {words.map((w, idx) => (
+            <TargetWordItem
+              key={`word-item-${w.id || idx}`}
+              word={w}
+              index={idx}
+              highContrast={highContrast}
+              onSelect={onSelectWordForInfo}
+            />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  },
+  (prev, next) => {
+    if (prev.highContrast !== next.highContrast) return false;
+    if (prev.words.length !== next.words.length) return false;
+    return prev.words.every((w, i) => w.found === next.words[i].found && w.word === next.words[i].word);
+  }
+);
+WordList.displayName = 'WordList';
