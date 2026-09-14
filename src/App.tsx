@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Capacitor } from '@capacitor/core';
 import { 
   GameState, 
   NavigationTab, 
@@ -103,6 +104,11 @@ export default function App() {
       settings.vibrationEnabled
     );
   }, [settings]);
+
+  // Initialize Real Google Mobile Ads (AdMob) on Native Android
+  useEffect(() => {
+    adService.initialize();
+  }, []);
 
   // Sync state changes to persistent storage
   useEffect(() => {
@@ -294,8 +300,20 @@ export default function App() {
     }
 
     // 2. WATCH GOOGLE REWARDED AD FOR HINT
-    if (!adService.checkIsAdAvailable()) {
-      showToast('Ad unavailable. Please try again.');
+    if (Capacitor.isNativePlatform()) {
+      showToast('Loading Google Ad...');
+      adService.showRewardVideo().then(result => {
+        if (result.earnedReward) {
+          handleRewardedAdReward();
+        } else if (result.message === 'ad_load_failed') {
+          // If native Google ad failed to load, fallback to modal
+          setIsRewardedAdOpen(true);
+        } else {
+          showToast('Ad closed early. No hint granted.');
+        }
+      }).catch(() => {
+        setIsRewardedAdOpen(true);
+      });
       return;
     }
 
@@ -333,6 +351,13 @@ export default function App() {
 
     // Show Google Interstitial Ad: Level 10, then every 6 levels (16, 22, 28, 34, ...)
     if (adService.shouldShowLevelMilestoneAd(completedLvl, progress.hasRemovedAds)) {
+      if (Capacitor.isNativePlatform()) {
+        showToast('Loading Google Ad...');
+        adService.showInterstitial().finally(() => {
+          startLevel(progress.currentLevel);
+        });
+        return;
+      }
       setMilestoneAdLevel(completedLvl);
       setIsInterstitialAdOpen(true);
       return;
