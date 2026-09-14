@@ -26,23 +26,19 @@ export const LetterGrid: React.FC<Props> = ({
   const [startCoord, setStartCoord] = useState<Coordinate | null>(null);
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
   const [isWrongSelection, setIsWrongSelection] = useState(false);
-  const [isWordFoundShake, setIsWordFoundShake] = useState(false);
   const [justFoundCells, setJustFoundCells] = useState<Coordinate[] | null>(null);
   const prevFoundCountRef = useRef(words.filter(w => w.found).length);
 
-  // Trigger subtle shake when a word is marked found
+  // Trigger subtle pop when a word is marked found
   React.useEffect(() => {
     const currentFoundWords = words.filter(w => w.found);
     if (currentFoundWords.length > prevFoundCountRef.current) {
       const latestFound = currentFoundWords[currentFoundWords.length - 1];
       if (latestFound) {
         setJustFoundCells(latestFound.cells);
-        setTimeout(() => setJustFoundCells(null), 400);
+        setTimeout(() => setJustFoundCells(null), 500);
       }
-      setIsWordFoundShake(true);
-      const timer = setTimeout(() => setIsWordFoundShake(false), 350);
       prevFoundCountRef.current = currentFoundWords.length;
-      return () => clearTimeout(timer);
     }
     prevFoundCountRef.current = currentFoundWords.length;
   }, [words]);
@@ -210,10 +206,8 @@ export const LetterGrid: React.FC<Props> = ({
 
     if (matched) {
       soundManager.playWordSuccess();
-      setIsWordFoundShake(true);
       setJustFoundCells(matched.cells);
-      setTimeout(() => setJustFoundCells(null), 400);
-      setTimeout(() => setIsWordFoundShake(false), 350);
+      setTimeout(() => setJustFoundCells(null), 500);
       onWordFound(matched);
     } else {
       if (currentSelection.length >= 2) {
@@ -272,13 +266,7 @@ export const LetterGrid: React.FC<Props> = ({
       <motion.div 
         animate={
           isCompleting 
-            ? { scale: [1, 0.97, 1.03, 1], transition: { duration: 0.6, ease: 'easeInOut' } }
-            : isWordFoundShake
-            ? { 
-                x: [0, -3.5, 3.5, -2.5, 2.5, -1, 1, 0],
-                y: [0, 1.5, -1.5, 1, -1, 0],
-                transition: { duration: 0.35, ease: 'easeInOut' }
-              }
+            ? { scale: [1, 0.98, 1.02, 1], transition: { duration: 0.5, ease: 'easeInOut' } }
             : isWrongSelection 
             ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
             : { x: 0, y: 0 }
@@ -297,152 +285,81 @@ export const LetterGrid: React.FC<Props> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
-          className={`w-full h-full grid gap-1 relative ${isCompleting ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
+          className={`w-full h-full grid gap-1.5 relative select-none ${isCompleting ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
           style={{
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
         >
-          {/* Layer 1: Tile Surface Backgrounds */}
-          <div
-            className="absolute inset-0 grid gap-1 pointer-events-none"
-            style={{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-              gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
-            }}
-          >
-            {grid.map((rowArr, r) =>
-              rowArr.map((_, c) => {
-                const cellKey = `${r}-${c}`;
-                const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
-                return (
-                  <div
-                    key={`tile-bg-${cellKey}`}
-                    className={`relative rounded-xl transition-all duration-150 ${
-                      isHinted
-                        ? 'bg-amber-100/90 border-2 border-amber-500 shadow-md shadow-amber-500/20'
-                        : 'bg-slate-50/80 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
-                    }`}
-                  />
-                );
-              })
-            )}
-          </div>
-
-          {/* Layer 2: SVG Vector Highlighter Capsules (Zero Clutter, Silky Smooth) */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible"
-            viewBox={`0 0 ${gridSize * 100} ${gridSize * 100}`}
-          >
-            {/* Render completed word highlight lines */}
-            {words.filter(w => w.found).map((w, idx) => {
-              if (w.cells.length < 2) return null;
-              const x1 = w.start.col * 100 + 50;
-              const y1 = w.start.row * 100 + 50;
-              const x2 = w.end.col * 100 + 50;
-              const y2 = w.end.row * 100 + 50;
+          {grid.map((rowArr, r) =>
+            rowArr.map((letter, c) => {
+              const cellKey = `${r}-${c}`;
+              const selected = selectedSet.has(cellKey);
+              const foundColors = foundCellsMap.get(cellKey);
+              const isFound = foundColors && foundColors.length > 0;
+              const primaryFoundColor = isFound ? foundColors[foundColors.length - 1] : undefined;
+              const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
+              const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
 
               return (
-                <line
-                  key={`found-line-${w.id || idx}`}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={w.color || '#2563EB'}
-                  strokeWidth="74"
-                  strokeLinecap="round"
-                  strokeOpacity={isCompleting ? 0.7 : 0.42}
-                  className="transition-all duration-300"
-                />
-              );
-            })}
+                <div
+                  key={`cell-${cellKey}`}
+                  id={`letter-cell-${cellKey}`}
+                  className={`relative flex items-center justify-center rounded-xl font-black transition-all duration-100 ease-out will-change-transform select-none ${
+                    isJustFound
+                      ? 'scale-115 -rotate-1 z-30'
+                      : selected
+                      ? 'scale-105 z-20'
+                      : 'scale-100 z-10'
+                  } ${
+                    selected
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400'
+                      : isHinted
+                      ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
+                      : isFound
+                      ? 'shadow-xs font-black'
+                      : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
+                  }`}
+                  style={
+                    !selected && isFound && primaryFoundColor
+                      ? {
+                          backgroundColor: `${primaryFoundColor}22`,
+                          borderColor: `${primaryFoundColor}90`,
+                          borderWidth: '2px',
+                          color: primaryFoundColor
+                        }
+                      : undefined
+                  }
+                >
+                  {/* Glowing Hint Indicator */}
+                  {isHinted && (
+                    <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
+                  )}
 
-            {/* Active single cell touch dot */}
-            {isSelecting && currentSelection.length === 1 && (
-              <circle
-                cx={currentSelection[0].col * 100 + 50}
-                cy={currentSelection[0].row * 100 + 50}
-                r="37"
-                fill="#2563EB"
-                fillOpacity="0.45"
-              />
-            )}
-
-            {/* Active multi-cell drag line */}
-            {isSelecting && currentSelection.length >= 2 && (
-              <line
-                x1={currentSelection[0].col * 100 + 50}
-                y1={currentSelection[0].row * 100 + 50}
-                x2={currentSelection[currentSelection.length - 1].col * 100 + 50}
-                y2={currentSelection[currentSelection.length - 1].row * 100 + 50}
-                stroke="#2563EB"
-                strokeWidth="74"
-                strokeLinecap="round"
-                strokeOpacity="0.48"
-              />
-            )}
-          </svg>
-
-          {/* Layer 3: Letters Typography and Hint Overlays */}
-          <div
-            className="absolute inset-0 grid gap-1 pointer-events-none z-20"
-            style={{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-              gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
-            }}
-          >
-            {grid.map((rowArr, r) =>
-              rowArr.map((letter, c) => {
-                const cellKey = `${r}-${c}`;
-                const selected = selectedSet.has(cellKey);
-                const foundColors = foundCellsMap.get(cellKey);
-                const isFound = foundColors && foundColors.length > 0;
-                const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
-                const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
-
-                return (
-                  <div
-                    key={`cell-${cellKey}`}
-                    id={`letter-cell-${cellKey}`}
-                    className={`relative flex items-center justify-center font-black select-none transition-transform duration-100 ease-out will-change-transform ${
-                      isJustFound
-                        ? 'scale-125 -rotate-2 z-30'
-                        : selected
-                        ? 'scale-115 z-20'
-                        : 'scale-100 z-10'
+                  {/* Navy / Colored Letter Typography */}
+                  <span
+                    className={`leading-none select-none tracking-wide transition-colors pointer-events-none ${
+                      selected
+                        ? 'text-white font-black'
+                        : isFound
+                        ? 'font-black'
+                        : 'font-extrabold'
+                    } ${
+                      gridSize <= 5
+                        ? 'text-2xl sm:text-3xl'
+                        : gridSize <= 7
+                        ? 'text-xl sm:text-2xl'
+                        : gridSize <= 8
+                        ? 'text-lg sm:text-xl'
+                        : 'text-base sm:text-lg'
                     }`}
                   >
-                    {/* Glowing Hint Indicator */}
-                    {isHinted && (
-                      <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
-                    )}
-
-                    {/* Navy Letter Typography */}
-                    <span
-                      className={`relative z-20 leading-none select-none tracking-wide transition-colors ${
-                        selected
-                          ? 'text-blue-950 font-black'
-                          : isFound
-                          ? 'text-slate-900 font-black'
-                          : 'text-slate-800 font-bold'
-                      } ${
-                        gridSize <= 5
-                          ? 'text-2xl sm:text-3xl font-black'
-                          : gridSize <= 7
-                          ? 'text-xl sm:text-2xl font-black'
-                          : gridSize <= 8
-                          ? 'text-lg sm:text-xl font-bold'
-                          : 'text-base sm:text-lg font-bold'
-                      } ${isHinted ? 'text-amber-800 font-black scale-110' : ''}`}
-                    >
-                      {letter}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                    {letter}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </motion.div>
     </div>

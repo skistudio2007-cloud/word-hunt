@@ -514,12 +514,9 @@ export default function App() {
           </div>
         )}
 
-        {/* 2. Active Level / Challenge Gameplay Screen */}
-        {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING') && currentPuzzle && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        {/* 2. Active Level / Challenge Gameplay Screen (Stays visible during LEVEL_COMPLETE under the modal) */}
+        {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING' || gameState === 'LEVEL_COMPLETE') && currentPuzzle && (
+          <div
             className="w-full min-h-screen bg-white flex flex-col justify-between p-2 pb-6 relative overflow-hidden"
           >
             {/* Theme-based Animated Dynamic Background */}
@@ -570,7 +567,7 @@ export default function App() {
                 💡 Swipe letters to find words
               </p>
             </footer>
-          </motion.div>
+          </div>
         )}
 
         {/* 3. Modals & Overlays with smooth enter/exit animations */}

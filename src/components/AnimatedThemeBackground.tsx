@@ -230,8 +230,8 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
             key={`p-${p.id}`}
             className="absolute select-none pointer-events-none opacity-40 transition-transform"
             style={{
-              left: `${p.x}vw`,
-              top: `${p.y}vh`,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
               fontSize: `${p.size}px`,
               transform: `rotate(${p.rotation}deg)`
             }}

@@ -83,6 +83,24 @@ jobs:
           name: WordHunt-debug-aab
           path: android/app/build/outputs/bundle/debug/*.aab
 
+      - name: Create or Update GitHub Release v1.0.3
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          tag_name: v1.0.3
+          name: "Word Hunt v1.0.3 - Smooth Animations & No White Screen Fix"
+          body: |
+            ### 🎮 Word Hunt v1.0.3
+
+            - 🚀 **White Screen Fix**: Fixed level completion screen transitioning into a blank white screen; game board stays visible cleanly beneath the celebration modal.
+            - 🎨 **Screen Fluctuation Fix**: Removed full-board shake and converted background particle coordinates to percentages to eliminate viewport resize jitter.
+            - ✨ **Silky Smooth Animations**: Added instant reactive tile selection highlighting and vibrant found word borders with celebratory letter pop.
+            - 📱 **Real AdMob Ads Integration**: Rewarded hints and interstitial milestone ads are active with your production AdMob IDs.
+          files: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/debug/*.aab
+
+
   # 2. Build & Deploy Web Game to GitHub Pages
   deploy-pages:
     name: Deploy Web Game to GitHub Pages
