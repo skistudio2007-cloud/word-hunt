@@ -40,10 +40,10 @@ export const LevelCompleteModal: React.FC<Props> = ({
   // Generate lightweight, festive celebration particles (pure DOM, zero Canvas/Worker crashes)
   const particles = useMemo<Particle[]>(() => {
     const list: Particle[] = [];
-    const count = 28;
+    const count = 16;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * 2 * Math.PI;
-      const distance = 90 + (i % 5) * 35;
+      const distance = 90 + (i % 4) * 35;
       list.push({
         id: i,
         x: Math.cos(angle) * distance,
@@ -51,7 +51,7 @@ export const LevelCompleteModal: React.FC<Props> = ({
         rotate: (i * 45) % 360,
         scale: 0.7 + (i % 3) * 0.25,
         color: CELEBRATION_COLORS[i % CELEBRATION_COLORS.length],
-        delay: (i % 6) * 0.04,
+        delay: (i % 4) * 0.05,
         size: 8 + (i % 3) * 4,
         isRound: i % 2 === 0
       });
@@ -110,7 +110,7 @@ export const LevelCompleteModal: React.FC<Props> = ({
               rotate: [0, p.rotate, p.rotate + 180]
             }}
             transition={{
-              duration: 2.2,
+              duration: 2.0,
               delay: p.delay,
               ease: [0.22, 1, 0.36, 1]
             }}
@@ -120,7 +120,8 @@ export const LevelCompleteModal: React.FC<Props> = ({
               height: p.isRound ? `${p.size}px` : `${p.size * 1.8}px`,
               borderRadius: p.isRound ? '9999px' : '3px',
               backgroundColor: p.color,
-              boxShadow: `0 0 8px ${p.color}80`
+              boxShadow: `0 0 8px ${p.color}80`,
+              willChange: 'transform, opacity'
             }}
           />
         ))}

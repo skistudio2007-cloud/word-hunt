@@ -43,7 +43,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       ? world.bgDecorations 
       : ['✨', '🌟', '💫'];
 
-    const count = variant === 'home' ? 16 : 14;
+    const count = variant === 'home' ? 16 : 6;
     const list: Particle[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -173,16 +173,18 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       {/* 1. Hardware-Accelerated Ambient Gradient Background (Zero GPU Blur Penalty) */}
       <div
         className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
-        style={{ background: themeStyles.blob1 }}
+        style={{ background: themeStyles.blob1, transform: 'translateZ(0)' }}
       />
       <div
         className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
-        style={{ background: themeStyles.blob2 }}
+        style={{ background: themeStyles.blob2, transform: 'translateZ(0)' }}
       />
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60"
-        style={{ background: themeStyles.blob3 }}
-      />
+      {variant === 'home' && (
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60"
+          style={{ background: themeStyles.blob3, transform: 'translateZ(0)' }}
+        />
+      )}
 
       {/* 2. Floating Letter Tile Runes (Only on Home screen to keep gameplay 100% smooth) */}
       {variant === 'home' && letterTiles.map((tile) => (

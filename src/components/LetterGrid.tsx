@@ -12,6 +12,103 @@ interface Props {
   isCompleting?: boolean;
 }
 
+interface LetterCellProps {
+  cellKey: string;
+  letter: string;
+  gridSize: number;
+  isSelected: boolean;
+  isFound: boolean;
+  primaryFoundColor?: string;
+  isHinted: boolean;
+  isJustFound: boolean;
+}
+
+const LetterCell = React.memo<LetterCellProps>(
+  ({
+    cellKey,
+    letter,
+    gridSize,
+    isSelected,
+    isFound,
+    primaryFoundColor,
+    isHinted,
+    isJustFound,
+  }) => {
+    return (
+      <div
+        id={`letter-cell-${cellKey}`}
+        className={`relative flex items-center justify-center rounded-xl font-black transition-[transform,background-color,color] duration-100 ease-out select-none ${
+          isJustFound
+            ? 'scale-115 -rotate-1 z-30 transform-gpu'
+            : isSelected
+            ? 'scale-105 z-20 transform-gpu'
+            : 'scale-100 z-10'
+        } ${
+          isSelected
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
+            : isHinted
+            ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
+            : isFound
+            ? 'shadow-xs font-black'
+            : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
+        }`}
+        style={
+          !isSelected && isFound && primaryFoundColor
+            ? {
+                touchAction: 'none',
+                backgroundColor: `${primaryFoundColor}20`,
+                borderColor: primaryFoundColor,
+                borderWidth: '2.5px',
+                borderStyle: 'solid',
+                color: primaryFoundColor
+              }
+            : {
+                touchAction: 'none'
+              }
+        }
+      >
+        {/* Glowing Hint Indicator */}
+        {isHinted && (
+          <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
+        )}
+
+        {/* Navy / Colored Letter Typography */}
+        <span
+          className={`leading-none select-none tracking-wide pointer-events-none ${
+            isSelected
+              ? 'text-white font-black'
+              : isFound
+              ? 'font-black'
+              : 'font-extrabold'
+          } ${
+            gridSize <= 5
+              ? 'text-2xl sm:text-3xl'
+              : gridSize <= 7
+              ? 'text-xl sm:text-2xl'
+              : gridSize <= 8
+              ? 'text-lg sm:text-xl'
+              : 'text-base sm:text-lg'
+          }`}
+        >
+          {letter}
+        </span>
+      </div>
+    );
+  },
+  (prev, next) => {
+    return (
+      prev.letter === next.letter &&
+      prev.isSelected === next.isSelected &&
+      prev.isFound === next.isFound &&
+      prev.primaryFoundColor === next.primaryFoundColor &&
+      prev.isHinted === next.isHinted &&
+      prev.isJustFound === next.isJustFound &&
+      prev.gridSize === next.gridSize
+    );
+  }
+);
+LetterCell.displayName = 'LetterCell';
+
 export const LetterGrid: React.FC<Props> = ({
   grid,
   words,
@@ -329,7 +426,7 @@ export const LetterGrid: React.FC<Props> = ({
             ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
             : { x: 0, y: 0 }
         }
-        className={`w-full h-full rounded-3xl p-3 sm:p-4 shadow-xl relative flex flex-col justify-between transition-all duration-300 ${
+        className={`w-full h-full rounded-3xl p-3 sm:p-4 shadow-xl relative flex flex-col justify-between transition-colors duration-300 ${
           highContrast 
             ? 'bg-white border-4 border-slate-900 shadow-xl' 
             : 'bg-white border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.08)]'
@@ -351,11 +448,12 @@ export const LetterGrid: React.FC<Props> = ({
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
         >
-          {/* Real-time SVG Pill Highlighter Trails */}
+          {/* Real-time SVG Pill Highlighter Trails (Isolated GPU Composition) */}
           <svg
             viewBox="0 0 1000 1000"
             className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
             preserveAspectRatio="none"
+            style={{ transform: 'translateZ(0)' }}
           >
             {/* Found Words Connecting Capsules */}
             {foundCapsules.map((cap) => (
@@ -392,71 +490,23 @@ export const LetterGrid: React.FC<Props> = ({
               const cellKey = `${r}-${c}`;
               const selected = selectedSet.has(cellKey);
               const foundColors = foundCellsMap.get(cellKey);
-              const isFound = foundColors && foundColors.length > 0;
-              const primaryFoundColor = isFound ? foundColors[foundColors.length - 1] : undefined;
-              const isHinted = hintStartCell && hintStartCell.row === r && hintStartCell.col === c;
-              const isJustFound = justFoundCells?.some(coord => coord.row === r && coord.col === c);
+              const isFound = !!(foundColors && foundColors.length > 0);
+              const primaryFoundColor = isFound ? foundColors![foundColors!.length - 1] : undefined;
+              const isHinted = !!(hintStartCell && hintStartCell.row === r && hintStartCell.col === c);
+              const isJustFound = !!justFoundCells?.some(coord => coord.row === r && coord.col === c);
 
               return (
-                <div
+                <LetterCell
                   key={`cell-${cellKey}`}
-                  id={`letter-cell-${cellKey}`}
-                  className={`relative flex items-center justify-center rounded-xl font-black transition-all duration-100 ease-out will-change-transform select-none ${
-                    isJustFound
-                      ? 'scale-115 -rotate-1 z-30'
-                      : selected
-                      ? 'scale-105 z-20'
-                      : 'scale-100 z-10'
-                  } ${
-                    selected
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
-                      : isHinted
-                      ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
-                      : isFound
-                      ? 'shadow-xs font-black'
-                      : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
-                  }`}
-                  style={
-                    !selected && isFound && primaryFoundColor
-                      ? {
-                          touchAction: 'none',
-                          backgroundColor: `${primaryFoundColor}20`,
-                          borderColor: primaryFoundColor,
-                          borderWidth: '2.5px',
-                          borderStyle: 'solid',
-                          color: primaryFoundColor
-                        }
-                      : {
-                          touchAction: 'none'
-                        }
-                  }
-                >
-                  {/* Glowing Hint Indicator */}
-                  {isHinted && (
-                    <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
-                  )}
-
-                  {/* Navy / Colored Letter Typography */}
-                  <span
-                    className={`leading-none select-none tracking-wide transition-colors pointer-events-none ${
-                      selected
-                        ? 'text-white font-black'
-                        : isFound
-                        ? 'font-black'
-                        : 'font-extrabold'
-                    } ${
-                      gridSize <= 5
-                        ? 'text-2xl sm:text-3xl'
-                        : gridSize <= 7
-                        ? 'text-xl sm:text-2xl'
-                        : gridSize <= 8
-                        ? 'text-lg sm:text-xl'
-                        : 'text-base sm:text-lg'
-                    }`}
-                  >
-                    {letter}
-                  </span>
-                </div>
+                  cellKey={cellKey}
+                  letter={letter}
+                  gridSize={gridSize}
+                  isSelected={selected}
+                  isFound={isFound}
+                  primaryFoundColor={primaryFoundColor}
+                  isHinted={isHinted}
+                  isJustFound={isJustFound}
+                />
               );
             })
           )}
