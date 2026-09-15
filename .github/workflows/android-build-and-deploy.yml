@@ -89,19 +89,19 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.11
+      - name: Create or Update GitHub Release v1.0.12
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.11
-          name: "Word Hunt v1.0.11 - Clean Direct Launch"
+          tag_name: v1.0.12
+          name: "Word Hunt v1.0.12 - Milestone Ads at Level 16, 22, 28, 34..."
           body: |
-            ### 🎮 Word Hunt v1.0.11 - Clean Direct Launch
+            ### 🎮 Word Hunt v1.0.12 - Milestone Ads at Level 16, 22, 28, 34...
 
-            - ⚡ **Direct Instant App Launch**: Removed app opening animation for clean, instant access to the main menu.
-            - 🚫 **No Automatic Interstitial Ads**: Even-numbered level transitions remain direct and uninterrupted.
-            - 💡 **Hint Rewarded Ads Intact**: Hint video ads and monetization remain fully functional.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 11 and `versionName` to 1.0.11.
+            - 🎯 **Milestone Interstitial Frequency**: Interstitial ads now trigger starting after Level 10 with a 6-level gap: Level 16, 22, 28, 34, 40, ...
+            - 🛡️ **Zero Interruption on Early Levels**: Levels 1 to 15 have absolutely no automatic interstitial ads.
+            - 💡 **Monetization & Rewarded Hint Ads Intact**: Hint rewarded video ads and AdMob services remain fully functional.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 12 and `versionName` to 1.0.12.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab

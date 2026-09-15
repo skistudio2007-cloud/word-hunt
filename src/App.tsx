@@ -347,7 +347,22 @@ export default function App() {
       return;
     }
 
-    // Direct transition to next level without automatic interstitial ad
+    const completedLvl = currentPuzzle?.levelNumber || (progress.currentLevel - 1);
+
+    // Show Interstitial Ad at Level 16, 22, 28, 34, 40... (every 6 levels after Level 10)
+    if (adService.shouldShowLevelMilestoneAd(completedLvl, progress.hasRemovedAds)) {
+      if (Capacitor.isNativePlatform()) {
+        showToast('Loading Google Ad...');
+        adService.showInterstitial().finally(() => {
+          startLevel(progress.currentLevel);
+        });
+        return;
+      }
+      setMilestoneAdLevel(completedLvl);
+      setIsInterstitialAdOpen(true);
+      return;
+    }
+
     startLevel(progress.currentLevel);
   };
 
