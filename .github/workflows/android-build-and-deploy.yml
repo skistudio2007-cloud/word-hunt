@@ -89,19 +89,19 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.10
+      - name: Create or Update GitHub Release v1.0.11
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.10
-          name: "Word Hunt v1.0.10 - App Opening Animation & Milestone Ads Removed"
+          tag_name: v1.0.11
+          name: "Word Hunt v1.0.11 - Clean Direct Launch"
           body: |
-            ### 🎮 Word Hunt v1.0.10 - App Opening Animation & Milestone Ads Removed
+            ### 🎮 Word Hunt v1.0.11 - Clean Direct Launch
 
-            - 🚫 **Disabled Automatic Interstitial Ads**: Completely removed the automatic milestone interstitial ads trigger on even-numbered levels (2, 4, 6, 8, 10...). Level transitions are now completely uninterrupted.
-            - 🎬 **New App Opening Animation**: Added a branded opening splash animation with cascading 3D letter tiles, rotating ambient auras, app badge reveal, sound chime, and tap-to-skip.
-            - 💡 **Monetization & Rewarded Hint Ads Intact**: AdMob configuration, hint rewarded ads, and monetization systems remain fully functional.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 10 and `versionName` to 1.0.10.
+            - ⚡ **Direct Instant App Launch**: Removed app opening animation for clean, instant access to the main menu.
+            - 🚫 **No Automatic Interstitial Ads**: Even-numbered level transitions remain direct and uninterrupted.
+            - 💡 **Hint Rewarded Ads Intact**: Hint video ads and monetization remain fully functional.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 11 and `versionName` to 1.0.11.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab

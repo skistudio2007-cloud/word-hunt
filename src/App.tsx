@@ -32,7 +32,6 @@ import { InterstitialAdModal } from './components/InterstitialAdModal';
 import { WordDefinitionDrawer } from './components/WordDefinitionDrawer';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { AnimatedThemeBackground } from './components/AnimatedThemeBackground';
-import { AppOpeningAnimation } from './components/AppOpeningAnimation';
 
 const TAB_ORDER: NavigationTab[] = ['HOME', 'COLLECTION', 'CHALLENGE', 'SETTINGS'];
 
@@ -89,7 +88,6 @@ export default function App() {
   const [selectedWordForInfo, setSelectedWordForInfo] = useState<PlacedWord | null>(null);
   const [hintStartCell, setHintStartCell] = useState<{ row: number; col: number } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showOpeningAnimation, setShowOpeningAnimation] = useState(true);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -656,11 +654,6 @@ export default function App() {
             />
           )}
         </AnimatePresence>
-
-        {/* 9. App Opening Animation */}
-        {showOpeningAnimation && (
-          <AppOpeningAnimation onComplete={() => setShowOpeningAnimation(false)} />
-        )}
       </div>
     </div>
   );
