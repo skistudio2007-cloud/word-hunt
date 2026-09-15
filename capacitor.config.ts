@@ -1,4 +1,4 @@
-﻿import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.wordhunt.puzzle',
@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https'
+  },
+  plugins: {
+    AdMob: {
+      appId: 'ca-app-pub-2007565791914092~7531337749'
+    }
   }
 };
 

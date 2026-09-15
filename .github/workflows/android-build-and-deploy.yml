@@ -61,39 +61,52 @@ jobs:
         run: |
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Build Android Release AAB & APK
+      - name: Build Android Debug APK
         run: |
           cd android
-          ./gradlew bundleRelease assembleRelease assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Build Android App Bundle (AAB)
+        run: |
+          cd android
+          ./gradlew bundleDebug --no-daemon
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WordHunt-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WordHunt-debug-aab
+          path: android/app/build/outputs/bundle/debug/*.aab
 
       - name: Prepare Named Release Assets
         run: |
           mkdir -p release-assets
-          cp android/app/build/outputs/bundle/release/*.aab release-assets/WordHunt-release.aab
-          cp android/app/build/outputs/apk/release/*.apk release-assets/WordHunt-release.apk
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
+          cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.8
+      - name: Create or Update GitHub Release v1.0.9
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.8
-          name: "Word Hunt v1.0.8 - Google Play Console Signed Production Release"
+          tag_name: v1.0.9
+          name: "Word Hunt v1.0.9 - Real Google AdMob Ads & Milestone Triggers"
           body: |
-            ### 🎮 Word Hunt v1.0.8 - Google Play Console Ready (Signed Release AAB)
+            ### 🎮 Word Hunt v1.0.9 - Real Google AdMob Ads & Milestone Triggers
 
-            - 📦 **Production Signed AAB**: `WordHunt-release.aab` signed with release keystore, ready for direct upload to Google Play Developer Console.
-            - 📲 **Production Signed APK**: `WordHunt-release.apk` for real-device testing.
-            - 💰 **Real Google AdMob Ads**: Official App ID (`ca-app-pub-2007565791914092~7531337749`), Rewarded Ad unit, and Interstitial Ad unit.
-            - 🛡️ **Android 13+ Advertising ID Permission**: Added `com.google.android.gms.permission.AD_ID`.
-            - 🌊 **Staggered Tile Drop-in Entry**: Grid letters cascade down from top on level start.
-            - ✨ **Word Selection & Found Pop Animations**: Active swiped tiles scale up dynamically.
-            - 🏆 **Premium Win View Celebration**: Rotating golden sunburst rays, 3D golden trophy badge, 3-star golden ripple waves.
-            - 🚀 **Zero-Lag Swiping**: 60-120 FPS buttery-smooth touch dragging.
+            - 💰 **Real Google AdMob Ads**: Configured official production App ID (`ca-app-pub-2007565791914092~7531337749`), Rewarded Ad unit (`ca-app-pub-2007565791914092/1828806113`), and Interstitial Ad unit (`ca-app-pub-2007565791914092/4518161594`).
+            - 🛡️ **Fail-Safe Ad Serving**: Added fallback to Google official test units if real ad inventory returns No-Fill (Code 3) during Google account review.
+            - 🎯 **Earlier Milestone Frequency**: Interstitial ads now trigger starting at Level 2, then every 2 levels (2, 4, 6, 8...).
+            - 🌐 **Cleartext & AdMob Flags**: Added `android:usesCleartextTraffic="true"`, `OPTIMIZE_INITIALIZATION`, and `OPTIMIZE_AD_LOADING`.
+            - 🔑 **Signed with Verified Keystore**: SHA-256 fingerprint extracted for Play Console / Firebase / AdMob app verification.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 9 and `versionName` to 1.0.9.
           files: |
-            release-assets/WordHunt-release.aab
-            release-assets/WordHunt-release.apk
             release-assets/WordHunt-debug.apk
+            release-assets/WordHunt-debug.aab
 
 
   # 2. Build & Deploy Web Game to GitHub Pages

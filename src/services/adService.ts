@@ -64,10 +64,12 @@ class AdMobService {
 
   /**
    * Pre-loads a real Google AdMob rewarded video ad in memory.
+   * Falls back to Google test ad unit if real ad has no-fill or is pending review.
    */
   public async preloadRewardVideo(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     try {
+      console.log('🔄 Requesting Real AdMob Rewarded Video:', this.config.rewardedAdUnitId);
       await AdMob.prepareRewardVideoAd({
         adId: this.config.rewardedAdUnitId
       });
@@ -75,9 +77,19 @@ class AdMobService {
       console.log('✅ Real AdMob Rewarded Video preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('⚠️ Real AdMob Rewarded Video failed to prepare:', err);
-      this.isRewardedReady = false;
-      return false;
+      console.warn('⚠️ Real AdMob Rewarded Video failed, attempting fallback test ad unit:', err);
+      try {
+        await AdMob.prepareRewardVideoAd({
+          adId: GOOGLE_TEST_REWARDED_ID
+        });
+        this.isRewardedReady = true;
+        console.log('✅ Fallback Test AdMob Rewarded Video preloaded successfully');
+        return true;
+      } catch (testErr) {
+        console.error('❌ AdMob Rewarded Video preparation failed:', testErr);
+        this.isRewardedReady = false;
+        return false;
+      }
     }
   }
 
@@ -121,10 +133,12 @@ class AdMobService {
 
   /**
    * Pre-loads a real Google AdMob interstitial ad in memory.
+   * Falls back to Google test ad unit if real ad has no-fill or is pending review.
    */
   public async preloadInterstitial(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     try {
+      console.log('🔄 Requesting Real AdMob Interstitial:', this.config.interstitialAdUnitId);
       await AdMob.prepareInterstitial({
         adId: this.config.interstitialAdUnitId
       });
@@ -132,9 +146,19 @@ class AdMobService {
       console.log('✅ Real AdMob Interstitial preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('⚠️ Real AdMob Interstitial failed to prepare:', err);
-      this.isInterstitialReady = false;
-      return false;
+      console.warn('⚠️ Real AdMob Interstitial failed, attempting fallback test ad unit:', err);
+      try {
+        await AdMob.prepareInterstitial({
+          adId: GOOGLE_TEST_INTERSTITIAL_ID
+        });
+        this.isInterstitialReady = true;
+        console.log('✅ Fallback Test AdMob Interstitial preloaded successfully');
+        return true;
+      } catch (testErr) {
+        console.error('❌ AdMob Interstitial preparation failed:', testErr);
+        this.isInterstitialReady = false;
+        return false;
+      }
     }
   }
 
@@ -176,11 +200,11 @@ class AdMobService {
 
   /**
    * Checks if an ad should be displayed at level milestone.
-   * Starts at Level 10, then triggers every 6 levels (10, 16, 22, 28, 34, ...).
+   * Triggers starting at Level 2, then every 2 levels (2, 4, 6, 8, 10, ...).
    */
   public shouldShowLevelMilestoneAd(completedLevel: number, hasRemovedAds: boolean = false): boolean {
     if (hasRemovedAds) return false;
-    return completedLevel >= 10 && (completedLevel - 10) % 6 === 0;
+    return completedLevel >= 2 && completedLevel % 2 === 0;
   }
 
   public setConfig(customConfig: Partial<AdConfig>): void {
