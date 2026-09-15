@@ -200,11 +200,10 @@ class AdMobService {
 
   /**
    * Checks if an ad should be displayed at level milestone.
-   * Triggers starting at Level 2, then every 2 levels (2, 4, 6, 8, 10, ...).
+   * Completely disabled automatic interstitial triggers per configuration.
    */
-  public shouldShowLevelMilestoneAd(completedLevel: number, hasRemovedAds: boolean = false): boolean {
-    if (hasRemovedAds) return false;
-    return completedLevel >= 2 && completedLevel % 2 === 0;
+  public shouldShowLevelMilestoneAd(_completedLevel: number, _hasRemovedAds: boolean = false): boolean {
+    return false;
   }
 
   public setConfig(customConfig: Partial<AdConfig>): void {

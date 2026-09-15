@@ -32,6 +32,7 @@ import { InterstitialAdModal } from './components/InterstitialAdModal';
 import { WordDefinitionDrawer } from './components/WordDefinitionDrawer';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { AnimatedThemeBackground } from './components/AnimatedThemeBackground';
+import { AppOpeningAnimation } from './components/AppOpeningAnimation';
 
 const TAB_ORDER: NavigationTab[] = ['HOME', 'COLLECTION', 'CHALLENGE', 'SETTINGS'];
 
@@ -88,6 +89,7 @@ export default function App() {
   const [selectedWordForInfo, setSelectedWordForInfo] = useState<PlacedWord | null>(null);
   const [hintStartCell, setHintStartCell] = useState<{ row: number; col: number } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showOpeningAnimation, setShowOpeningAnimation] = useState(true);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -347,22 +349,7 @@ export default function App() {
       return;
     }
 
-    const completedLvl = currentPuzzle?.levelNumber || (progress.currentLevel - 1);
-
-    // Show Google Interstitial Ad: Level 10, then every 6 levels (16, 22, 28, 34, ...)
-    if (adService.shouldShowLevelMilestoneAd(completedLvl, progress.hasRemovedAds)) {
-      if (Capacitor.isNativePlatform()) {
-        showToast('Loading Google Ad...');
-        adService.showInterstitial().finally(() => {
-          startLevel(progress.currentLevel);
-        });
-        return;
-      }
-      setMilestoneAdLevel(completedLvl);
-      setIsInterstitialAdOpen(true);
-      return;
-    }
-
+    // Direct transition to next level without automatic interstitial ad
     startLevel(progress.currentLevel);
   };
 
@@ -669,6 +656,11 @@ export default function App() {
             />
           )}
         </AnimatePresence>
+
+        {/* 9. App Opening Animation */}
+        {showOpeningAnimation && (
+          <AppOpeningAnimation onComplete={() => setShowOpeningAnimation(false)} />
+        )}
       </div>
     </div>
   );

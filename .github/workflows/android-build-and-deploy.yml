@@ -89,21 +89,19 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.9
+      - name: Create or Update GitHub Release v1.0.10
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.9
-          name: "Word Hunt v1.0.9 - Real Google AdMob Ads & Milestone Triggers"
+          tag_name: v1.0.10
+          name: "Word Hunt v1.0.10 - App Opening Animation & Milestone Ads Removed"
           body: |
-            ### 🎮 Word Hunt v1.0.9 - Real Google AdMob Ads & Milestone Triggers
+            ### 🎮 Word Hunt v1.0.10 - App Opening Animation & Milestone Ads Removed
 
-            - 💰 **Real Google AdMob Ads**: Configured official production App ID (`ca-app-pub-2007565791914092~7531337749`), Rewarded Ad unit (`ca-app-pub-2007565791914092/1828806113`), and Interstitial Ad unit (`ca-app-pub-2007565791914092/4518161594`).
-            - 🛡️ **Fail-Safe Ad Serving**: Added fallback to Google official test units if real ad inventory returns No-Fill (Code 3) during Google account review.
-            - 🎯 **Earlier Milestone Frequency**: Interstitial ads now trigger starting at Level 2, then every 2 levels (2, 4, 6, 8...).
-            - 🌐 **Cleartext & AdMob Flags**: Added `android:usesCleartextTraffic="true"`, `OPTIMIZE_INITIALIZATION`, and `OPTIMIZE_AD_LOADING`.
-            - 🔑 **Signed with Verified Keystore**: SHA-256 fingerprint extracted for Play Console / Firebase / AdMob app verification.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 9 and `versionName` to 1.0.9.
+            - 🚫 **Disabled Automatic Interstitial Ads**: Completely removed the automatic milestone interstitial ads trigger on even-numbered levels (2, 4, 6, 8, 10...). Level transitions are now completely uninterrupted.
+            - 🎬 **New App Opening Animation**: Added a branded opening splash animation with cascading 3D letter tiles, rotating ambient auras, app badge reveal, sound chime, and tap-to-skip.
+            - 💡 **Monetization & Rewarded Hint Ads Intact**: AdMob configuration, hint rewarded ads, and monetization systems remain fully functional.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 10 and `versionName` to 1.0.10.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab
