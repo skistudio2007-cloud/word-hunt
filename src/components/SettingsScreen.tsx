@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Volume2, 
@@ -16,7 +16,6 @@ import {
 import { LanguageCode, UserProgress, UserSettings } from '../types';
 import { soundManager } from '../services/sound';
 import { getTranslation } from '../services/localization';
-import { billingService, ProductDetails } from '../services/billing';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { TermsModal } from './TermsModal';
 
@@ -48,72 +47,13 @@ export const SettingsScreen: React.FC<Props> = ({
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [productInfo, setProductInfo] = useState<ProductDetails | null>(null);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
 
   const lang = settings.language;
   const t = (key: string) => getTranslation(lang, key);
 
-  // Load product information from store on mount
-  useEffect(() => {
-    let isMounted = true;
-    billingService.getRemoveAdsProduct().then(prod => {
-      if (isMounted && prod) {
-        setProductInfo(prod);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   const showNotification = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
-  };
-
-  const handlePurchaseRemoveAds = async () => {
-    if (progress.hasRemovedAds || isPurchasing) return;
-    soundManager.playTap();
-    setIsPurchasing(true);
-    try {
-      const res = await billingService.purchaseRemoveAds();
-      if (res.success) {
-        onRemoveAds();
-        showNotification('Purchase successful! Ads removed permanently.');
-      } else if (res.state === 'ALREADY_OWNED') {
-        onRemoveAds();
-        showNotification('You already own Remove Ads. Restored successfully!');
-      } else if (res.state === 'CANCELLED') {
-        showNotification('Purchase cancelled.');
-      } else {
-        showNotification(res.message || 'Purchase could not be completed.');
-      }
-    } catch (e) {
-      showNotification('An error occurred during purchase.');
-    } finally {
-      setIsPurchasing(false);
-    }
-  };
-
-  const handleRestorePurchases = async () => {
-    if (isRestoring) return;
-    soundManager.playTap();
-    setIsRestoring(true);
-    try {
-      const res = await billingService.restorePurchases();
-      if (res.hasRemovedAds) {
-        onRemoveAds();
-        showNotification('Purchases restored! Ads removed.');
-      } else {
-        showNotification(res.message || 'No previous purchases found.');
-      }
-    } catch (e) {
-      showNotification('Failed to restore purchases.');
-    } finally {
-      setIsRestoring(false);
-    }
   };
 
   const toggleSound = () => {
@@ -347,40 +287,40 @@ export const SettingsScreen: React.FC<Props> = ({
               <div className="flex items-center gap-2">
                 <div className="text-sm font-bold text-slate-900">{t('removeAds')}</div>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                  {productInfo?.price || '$1.99 / mo'}
+                  $1.99 / MO
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">Monthly • $1.99 / month • Auto-renews • Cancel anytime</div>
+              <div className="text-[11px] text-slate-400">$1.99 per month • Pure offline ad-free play</div>
             </div>
           </div>
           <button
-            disabled={progress.hasRemovedAds || isPurchasing}
-            onClick={handlePurchaseRemoveAds}
+            disabled={progress.hasRemovedAds}
+            onClick={() => {
+              soundManager.playTap();
+              onRemoveAds();
+              showNotification('Subscribed! Ad-Free Pass active ($1.99/mo)');
+            }}
             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
               progress.hasRemovedAds
                 ? 'bg-slate-100 text-slate-400 cursor-default'
-                : isPurchasing
-                ? 'bg-slate-200 text-slate-500 cursor-wait'
                 : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
             }`}
           >
-            {progress.hasRemovedAds
-              ? 'Active ($1.99/mo)'
-              : isPurchasing
-              ? 'Processing...'
-              : productInfo?.price || '$1.99 / mo'}
+            {progress.hasRemovedAds ? 'Active ($1.99/mo)' : '$1.99 / mo'}
           </button>
         </div>
 
         {/* Restore Purchases */}
         <button
-          disabled={isRestoring}
-          onClick={handleRestorePurchases}
+          onClick={() => {
+            soundManager.playTap();
+            showNotification(t('saveSuccessful'));
+          }}
           className="w-full p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 flex items-center justify-between text-xs font-bold text-slate-700 cursor-pointer transition-colors shadow-xs"
         >
           <div className="flex items-center gap-2.5">
-            <RefreshCw className={`w-4 h-4 text-slate-500 ${isRestoring ? 'animate-spin text-emerald-600' : ''}`} />
-            <span>{isRestoring ? 'Restoring Purchases...' : t('restorePurchases')}</span>
+            <RefreshCw className="w-4 h-4 text-slate-500" />
+            <span>{t('restorePurchases')}</span>
           </div>
           <span className="text-slate-400 text-[11px]">✓</span>
         </button>

@@ -15,7 +15,6 @@ import { generatePuzzle, generateDailyPuzzle, generateChallengePuzzle } from './
 import { StorageService, DEFAULT_PROGRESS, DEFAULT_SETTINGS } from './services/storage';
 import { soundManager } from './services/sound';
 import { adService } from './services/adService';
-import { billingService } from './services/billing';
 import { getWorldForLevel } from './data/worlds';
 
 import { BottomNav } from './components/BottomNav';
@@ -109,38 +108,6 @@ export default function App() {
   // Initialize Real Google Mobile Ads (AdMob) on Native Android
   useEffect(() => {
     adService.initialize();
-  }, []);
-
-  // Initialize In-App Purchasing (Amazon Appstore) & Sync/Verify Entitlements
-  useEffect(() => {
-    billingService.initialize().catch(() => {});
-
-    // Check store subscription entitlement on startup
-    billingService.checkEntitlementsOnStartup().then(isEntitled => {
-      console.log('✅ Amazon IAP: Verified Remove Ads subscription status on startup:', isEntitled);
-      setProgress(p => {
-        if (p.hasRemovedAds !== isEntitled) {
-          return { ...p, hasRemovedAds: isEntitled };
-        }
-        return p;
-      });
-    }).catch(err => {
-      console.warn('Startup subscription check:', err);
-    });
-
-    // Real-time listener for Amazon purchase completion, fulfillment, or expiration
-    const unsubscribe = billingService.onEntitlementChanged(hasRemovedAds => {
-      setProgress(p => {
-        if (p.hasRemovedAds !== hasRemovedAds) {
-          return { ...p, hasRemovedAds };
-        }
-        return p;
-      });
-    });
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   // Sync state changes to persistent storage
