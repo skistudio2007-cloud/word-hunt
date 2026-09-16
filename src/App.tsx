@@ -454,8 +454,8 @@ export default function App() {
   const currentWorld = getWorldForLevel(currentPuzzle?.levelNumber || progress.currentLevel);
 
   return (
-    <div className="h-full min-h-[100dvh] max-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-hidden font-sans select-none">
-      <div className="w-full max-w-[480px] h-full min-h-[100dvh] max-h-[100dvh] bg-white shadow-xl flex flex-col relative overflow-hidden">
+    <div className="w-full min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-x-hidden font-sans select-none">
+      <div className="w-full max-w-[480px] min-h-[100dvh] bg-white shadow-xl flex flex-col relative overflow-x-hidden">
         
         {/* Toast Feedback Notification Banner */}
         <AnimatePresence>
@@ -474,7 +474,7 @@ export default function App() {
 
         {/* 1. Main Navigation Screens (When Game State is MAIN_MENU) */}
         {gameState === 'MAIN_MENU' && (
-          <div className="w-full flex-1 flex flex-col overflow-hidden pb-[70px]">
+          <div className="w-full flex-1 flex flex-col overflow-y-auto overflow-x-hidden pb-[75px] overscroll-y-contain">
             <AnimatePresence mode="wait" custom={tabDirection}>
               {/* Tab 1: HOME */}
               {activeTab === 'HOME' && (
@@ -576,7 +576,7 @@ export default function App() {
         {/* 2. Active Level / Challenge Gameplay Screen (Stays visible during LEVEL_COMPLETE under the modal) */}
         {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING' || gameState === 'LEVEL_COMPLETE') && currentPuzzle && (
           <div
-            className="w-full h-full max-h-[100dvh] flex-1 bg-white flex flex-col justify-between p-2 pb-3 sm:pb-4 relative overflow-hidden"
+            className="w-full min-h-[100dvh] flex-1 bg-white flex flex-col justify-between p-2 pb-3 sm:pb-4 relative overflow-y-auto overflow-x-hidden overscroll-y-contain"
           >
             {/* Theme-based Animated Dynamic Background */}
             <AnimatedThemeBackground 
@@ -601,7 +601,7 @@ export default function App() {
             </div>
 
             {/* Center Letter Grid & Responsive Words Container */}
-            <main className="flex-1 flex flex-col items-center justify-center my-auto w-full relative z-10 min-h-0 overflow-hidden">
+            <main className="flex-1 flex flex-col items-center justify-start my-auto w-full relative z-10 py-1">
               <LetterGrid
                 key={`grid-lvl-${currentPuzzle.levelNumber}-${currentPuzzle.seed || ''}`}
                 grid={currentPuzzle.grid}
@@ -613,7 +613,7 @@ export default function App() {
               />
 
               {/* Target Words List with proportional scroll-safe container */}
-              <div className="w-full max-h-[26dvh] overflow-y-auto overflow-x-hidden py-1">
+              <div className="w-full max-w-[440px] px-2 py-1">
                 <WordList
                   words={puzzleWords}
                   onSelectWordForInfo={w => setSelectedWordForInfo(w)}
