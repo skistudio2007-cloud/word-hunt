@@ -90,15 +90,17 @@ const LetterCell = React.memo<LetterCellProps>(
               : isFound
               ? 'font-black'
               : 'font-extrabold'
-          } ${
-            gridSize <= 5
-              ? 'text-2xl sm:text-3xl'
-              : gridSize <= 7
-              ? 'text-xl sm:text-2xl'
-              : gridSize <= 8
-              ? 'text-lg sm:text-xl'
-              : 'text-base sm:text-lg'
           }`}
+          style={{
+            fontSize:
+              gridSize <= 5
+                ? 'clamp(18px, min(6vw, 3.2dvh), 28px)'
+                : gridSize <= 6
+                ? 'clamp(16px, min(5vw, 2.8dvh), 24px)'
+                : gridSize <= 7
+                ? 'clamp(14px, min(4.2vw, 2.4dvh), 21px)'
+                : 'clamp(12px, min(3.6vw, 2.0dvh), 18px)'
+          }}
         >
           {letter}
         </span>
@@ -427,7 +429,13 @@ export const LetterGrid: React.FC<Props> = ({
   }, [words, gridSize]);
 
   return (
-    <div className="relative w-full max-w-[400px] aspect-square mx-auto p-1 sm:p-2 select-none touch-none">
+    <div 
+      className="relative aspect-square mx-auto p-1 sm:p-2 select-none touch-none shrink-0"
+      style={{
+        width: 'min(92vw, 46dvh, 390px)',
+        height: 'min(92vw, 46dvh, 390px)',
+      }}
+    >
       {/* Large White Rounded Puzzle Board with subtle bounce on victory */}
       <motion.div 
         animate={

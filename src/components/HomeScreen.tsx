@@ -24,7 +24,7 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
   const world = getWorldForLevel(currentLevel);
 
   return (
-    <div className="w-full min-h-[calc(100vh-70px)] bg-white flex flex-col items-center justify-between px-6 py-10 select-none relative overflow-hidden">
+    <div className="w-full h-full flex-1 flex flex-col items-center justify-between px-6 py-6 sm:py-8 select-none relative overflow-hidden">
       {/* 0. Theme-based Animated Background */}
       <AnimatedThemeBackground 
         world={world} 

@@ -89,19 +89,18 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.13
+      - name: Create or Update GitHub Release v1.0.14
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.13
-          name: "Word Hunt v1.0.13 - Real Ads Only (Test Ad Fallbacks Removed)"
+          tag_name: v1.0.14
+          name: "Word Hunt v1.0.14 - Responsive Aspect Ratio Scaling & Lag-Free Win Screen"
           body: |
-            ### 🎮 Word Hunt v1.0.13 - Real Ads Only (Test Ad Fallbacks Removed)
+            ### 🎮 Word Hunt v1.0.14 - Responsive Aspect Ratio Scaling & Lag-Free Win Screen
 
-            - 🚫 **Removed Test Ad Fallbacks**: Completely removed all Google demo/test ad unit fallback IDs (`ca-app-pub-3940256099942544/*`).
-            - 💰 **Real Ad Units Preserved**: Kept production App ID (`ca-app-pub-2007565791914092~7531337749`), Rewarded unit (`1828806113`), and Interstitial unit (`4518161594`) exactly as configured.
-            - 🛡️ **Graceful Unavailable Handling**: If real rewarded ad is unavailable, displays "Ads not available", gives no reward, and returns safely to game. Interstitial ads skip cleanly if unavailable without showing test ads.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 13 and `versionName` to 1.0.13.
+            - 📐 **Universal Aspect Ratio Responsive Scaling**: Dynamically scales the letter board (`min(92vw, 46dvh, 390px)`), typography (`clamp`), and containers (`100dvh`) to look and feel identical and balanced on any phone screen (16:9, 18:9, 19.5:9, 20:9, tablets, and small screens).
+            - ⚡ **Zero-Lag Level Complete Screen**: Replaced the heavy 600px rotating conic-gradient with an ultra-light GPU ambient aura, optimized confetti to hardware-composited transforms without box-shadow repaints, and properly reset background grid animations.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 14 and `versionName` to 1.0.14.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab

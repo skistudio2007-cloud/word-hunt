@@ -183,6 +183,7 @@ export default function App() {
         // Step 2: Play victory fanfare and transition to clean win screen
         setTimeout(() => {
           soundManager.playLevelVictory();
+          setIsLevelCompleting(false);
           setGameState('LEVEL_COMPLETE');
 
           const solveTimeSecs = Math.max(5, Math.round((Date.now() - levelStartTime) / 1000));
@@ -394,8 +395,8 @@ export default function App() {
   const currentWorld = getWorldForLevel(currentPuzzle?.levelNumber || progress.currentLevel);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-x-hidden font-sans select-none">
-      <div className="w-full max-w-[440px] min-h-screen bg-white shadow-xl flex flex-col relative">
+    <div className="h-full min-h-[100dvh] max-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-hidden font-sans select-none">
+      <div className="w-full max-w-[480px] h-full min-h-[100dvh] max-h-[100dvh] bg-white shadow-xl flex flex-col relative overflow-hidden">
         
         {/* Toast Feedback Notification Banner */}
         <AnimatePresence>
@@ -414,7 +415,7 @@ export default function App() {
 
         {/* 1. Main Navigation Screens (When Game State is MAIN_MENU) */}
         {gameState === 'MAIN_MENU' && (
-          <div className="w-full flex-1 flex flex-col overflow-hidden">
+          <div className="w-full flex-1 flex flex-col overflow-hidden pb-[70px]">
             <AnimatePresence mode="wait" custom={tabDirection}>
               {/* Tab 1: HOME */}
               {activeTab === 'HOME' && (
@@ -516,7 +517,7 @@ export default function App() {
         {/* 2. Active Level / Challenge Gameplay Screen (Stays visible during LEVEL_COMPLETE under the modal) */}
         {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING' || gameState === 'LEVEL_COMPLETE') && currentPuzzle && (
           <div
-            className="w-full min-h-screen bg-white flex flex-col justify-between p-2 pb-6 relative overflow-hidden"
+            className="w-full h-full max-h-[100dvh] flex-1 bg-white flex flex-col justify-between p-2 pb-3 sm:pb-4 relative overflow-hidden"
           >
             {/* Theme-based Animated Dynamic Background */}
             <AnimatedThemeBackground 
@@ -525,7 +526,7 @@ export default function App() {
             />
 
             {/* Top Header with direct Hint button */}
-            <div className="relative z-10 w-full">
+            <div className="relative z-10 w-full shrink-0">
               <TopHeader
                 levelNumber={currentPuzzle.levelNumber}
                 themeName={activeChallenge ? activeChallenge.title : currentPuzzle.theme}
@@ -540,8 +541,8 @@ export default function App() {
               />
             </div>
 
-            {/* Center Letter Grid */}
-            <main className="my-auto relative z-10">
+            {/* Center Letter Grid & Responsive Words Container */}
+            <main className="flex-1 flex flex-col items-center justify-center my-auto w-full relative z-10 min-h-0 overflow-hidden">
               <LetterGrid
                 key={`grid-lvl-${currentPuzzle.levelNumber}-${currentPuzzle.seed || ''}`}
                 grid={currentPuzzle.grid}
@@ -549,19 +550,21 @@ export default function App() {
                 onWordFound={handleWordFound}
                 hintStartCell={hintStartCell}
                 highContrast={settings.highContrast}
-                isCompleting={isLevelCompleting}
+                isCompleting={gameState === 'PLAYING' && isLevelCompleting}
               />
 
-              {/* Target Words List */}
-              <WordList
-                words={puzzleWords}
-                onSelectWordForInfo={w => setSelectedWordForInfo(w)}
-                highContrast={settings.highContrast}
-              />
+              {/* Target Words List with proportional scroll-safe container */}
+              <div className="w-full max-h-[26dvh] overflow-y-auto overflow-x-hidden py-1">
+                <WordList
+                  words={puzzleWords}
+                  onSelectWordForInfo={w => setSelectedWordForInfo(w)}
+                  highContrast={settings.highContrast}
+                />
+              </div>
             </main>
 
             {/* Bottom Educational Hint Tip */}
-            <footer className="text-center pt-2 relative z-10">
+            <footer className="shrink-0 text-center py-1 relative z-10">
               <p className="text-[11px] font-bold text-slate-700 bg-white/95 py-1 px-3 rounded-full inline-block shadow-2xs border border-slate-200/60">
                 💡 Swipe letters to find words
               </p>
