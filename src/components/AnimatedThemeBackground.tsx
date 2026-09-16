@@ -43,7 +43,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       ? world.bgDecorations 
       : ['✨', '🌟', '💫'];
 
-    const count = variant === 'home' ? 12 : 3;
+    const count = variant === 'home' ? 5 : 3;
     const list: Particle[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -54,16 +54,27 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       const pseudoRand3 = Math.sin(levelNumber * 300 + i * 83) * 10000;
       const r3 = Math.abs(pseudoRand3 - Math.floor(pseudoRand3));
 
+      let x = Math.floor(r1 * 84) + 8;
+      let y = Math.floor(r2 * 84) + 8;
+      
+      // Keep home & gameplay particles along the outer margins to avoid cluttering content
+      if (variant === 'home') {
+        if (i % 4 === 0) { x = 6 + Math.floor(r1 * 16); y = 8 + Math.floor(r2 * 20); }
+        else if (i % 4 === 1) { x = 76 + Math.floor(r1 * 16); y = 10 + Math.floor(r2 * 22); }
+        else if (i % 4 === 2) { x = 6 + Math.floor(r1 * 16); y = 62 + Math.floor(r2 * 20); }
+        else { x = 76 + Math.floor(r1 * 16); y = 64 + Math.floor(r2 * 20); }
+      }
+
       list.push({
         id: i,
         item: decorations[i % decorations.length],
-        x: Math.floor(r1 * 84) + 8,
-        y: Math.floor(r2 * 84) + 8,
+        x,
+        y,
         size: 16 + Math.floor(r3 * 16),
         duration: 9 + Math.floor(r1 * 9),
         delay: Math.floor(r2 * 4),
         rotation: Math.floor(r3 * 360),
-        opacity: 0.35 + r3 * 0.35
+        opacity: variant === 'home' ? 0.4 : 0.35 + r3 * 0.35
       });
     }
 
@@ -73,7 +84,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
   // Floating Alphabet Letter Tiles (W, O, R, D, H, U, N, T...)
   const letterTiles = useMemo(() => {
     const letters = ['W', 'O', 'R', 'D', 'H', 'U', 'N', 'T', 'S', 'E', 'A', 'R', 'C', 'H'];
-    const count = variant === 'home' ? 6 : 2;
+    const count = variant === 'home' ? 4 : 2;
     const list: LetterTile[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -86,11 +97,11 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
 
       let x = Math.floor(r1 * 82) + 9;
       let y = Math.floor(r2 * 82) + 9;
-      if (variant === 'gameplay') {
-        if (i % 4 === 0) y = 4 + Math.floor(r2 * 10);
-        else if (i % 4 === 1) y = 86 + Math.floor(r2 * 8);
-        else if (i % 4 === 2) x = 3 + Math.floor(r1 * 6);
-        else x = 91 + Math.floor(r1 * 6);
+      if (variant === 'gameplay' || variant === 'home') {
+        if (i % 4 === 0) { y = 5 + Math.floor(r2 * 12); x = 12 + Math.floor(r1 * 70); }
+        else if (i % 4 === 1) { y = 78 + Math.floor(r2 * 8); x = 10 + Math.floor(r1 * 74); }
+        else if (i % 4 === 2) { x = 4 + Math.floor(r1 * 8); y = 30 + Math.floor(r2 * 36); }
+        else { x = 86 + Math.floor(r1 * 8); y = 28 + Math.floor(r2 * 38); }
       }
 
       list.push({

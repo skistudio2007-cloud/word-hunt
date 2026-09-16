@@ -24,77 +24,76 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
   const world = getWorldForLevel(currentLevel);
 
   return (
-    <div className="w-full h-full flex-1 flex flex-col items-center justify-between px-6 py-6 sm:py-8 select-none relative overflow-hidden">
-      {/* 0. Theme-based Animated Background */}
+    <div className="w-full min-h-[calc(100vh-70px)] flex flex-col items-center justify-between px-6 pt-6 sm:pt-10 pb-24 select-none relative overflow-hidden">
+      {/* 0. Theme-based Ambient Animated Background */}
       <AnimatedThemeBackground 
         world={world} 
         levelNumber={currentLevel} 
         variant="home" 
       />
-      {/* 1. Upper-Center: Original Game Logo */}
-      <div className="flex-1 flex flex-col items-center justify-center pt-6 relative z-10">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: -10 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center text-center space-y-4"
+
+      {/* 1. Upper-Center Hero Section: App Icon + Title + Theme Level Badge */}
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-xs space-y-6 my-auto">
+        {/* Floating App Icon with Calm Ambient Glow */}
+        <motion.div 
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+          className="relative flex flex-col items-center"
         >
-          {/* App Icon Badge with gentle floating animation */}
-          <motion.div 
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative"
-          >
+          <div className="relative">
             <img
               src="/app-icon.png"
               alt="Word Hunt Icon"
-              className="w-24 h-24 rounded-3xl shadow-2xl shadow-indigo-500/30 border-2 border-white/90 object-cover"
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl shadow-2xl shadow-blue-500/25 border-2 border-white/95 object-cover"
             />
-            {/* Subtle glow accent */}
-            <div className="absolute -inset-1 bg-indigo-500/20 rounded-3xl blur-md -z-10" />
-          </motion.div>
-
-          {/* Word Hunt Typography */}
-          <div>
-            <h1 className="text-3xl font-black tracking-wider text-slate-900 leading-none">
-              WORD HUNT
-            </h1>
-            <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mt-1.5">
-              Word Search Adventure
-            </p>
+            {/* Soft ambient aura */}
+            <div className="absolute -inset-2 bg-gradient-to-tr from-blue-500/20 via-indigo-500/20 to-teal-400/20 rounded-3xl blur-xl -z-10" />
           </div>
         </motion.div>
-      </div>
 
-      {/* 2. Main Content: Centered Blue Play Button & Theme Level Indicator */}
-      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-xs space-y-4 pb-8 relative z-10">
-        <motion.button
-          id="btn-main-play"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.94 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          onClick={handlePlayClick}
-          className="w-full py-5 rounded-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-extrabold text-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 transition-colors cursor-pointer border border-blue-400/50"
-        >
-          <Play className="w-6 h-6 fill-white text-white translate-x-0.5" />
-          <span>{playText}</span>
-        </motion.button>
+        {/* Word Hunt Typography */}
+        <div className="text-center space-y-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-wider text-slate-900 leading-none">
+            WORD HUNT
+          </h1>
+          <p className="text-xs sm:text-sm font-bold tracking-widest text-slate-500 uppercase">
+            Word Search Adventure
+          </p>
+        </div>
 
         {/* Current Theme World & Level Badge */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs">
-          <span className="text-sm">{world.bgDecorations[0] || '🌿'}</span>
-          <span className="text-xs font-black text-slate-800 tracking-wide uppercase">
+        <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 backdrop-blur-xs border border-slate-200/90 shadow-xs">
+          <span className="text-base">{world.bgDecorations[0] || '🌿'}</span>
+          <span className="text-xs font-black text-slate-800 tracking-wider uppercase">
             {world.name}
           </span>
           <span className="text-slate-300">•</span>
-          <span className="text-xs font-bold text-slate-500">
+          <span className="text-xs font-extrabold text-blue-600 tracking-wide">
             {levelText} {currentLevel}
           </span>
         </div>
       </div>
 
-      {/* Spacer to keep optical balance with bottom nav */}
-      <div className="h-6" />
+      {/* 2. Lower Action Section: Play Button placed at bottom */}
+      <div className="w-full max-w-xs flex flex-col items-center gap-3 relative z-10 mt-auto pt-4 pb-2">
+        <motion.button
+          id="btn-main-play"
+          animate={{ scale: [1, 1.025, 1] }}
+          transition={{ 
+            scale: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
+          }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={handlePlayClick}
+          className="w-full py-5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-black text-xl shadow-xl shadow-blue-500/35 flex items-center justify-center gap-3 cursor-pointer border border-blue-400/50 relative overflow-hidden select-none transition-shadow"
+        >
+          <Play className="w-6 h-6 fill-white text-white translate-x-0.5 drop-shadow-xs" />
+          <span className="tracking-wide text-xl uppercase font-black">{playText}</span>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-white/20 font-bold border border-white/30 text-white shadow-xs">
+            {levelText} {currentLevel}
+          </span>
+        </motion.button>
+      </div>
     </div>
   );
 };

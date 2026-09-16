@@ -425,7 +425,7 @@ export default function App() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  className="flex-1 w-full"
+                  className="flex-1 w-full flex flex-col h-full"
                 >
                   <HomeScreen
                     currentLevel={progress.currentLevel}
