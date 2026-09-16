@@ -299,33 +299,7 @@ export const MainMenu: React.FC<Props> = ({
       </div>
 
       {/* Bottom Auxiliary Links */}
-      <footer className="pt-3 border-t border-neutral-800/80 flex items-center justify-around text-[11px] font-semibold text-neutral-400">
-        <button
-          id="btn-footer-remove-ads"
-          onClick={() => {
-            soundManager.playTap();
-            onOpenShop();
-          }}
-          className="hover:text-white transition-colors cursor-pointer"
-        >
-          {progress.hasRemovedAds ? '✓ No Ads Active' : 'Remove Ads'}
-        </button>
-
-        <span>•</span>
-
-        <button
-          id="btn-footer-restore"
-          onClick={() => {
-            soundManager.playTap();
-            showToast('Purchases and unlocked worlds are saved on this device.');
-          }}
-          className="hover:text-white transition-colors cursor-pointer"
-        >
-          Restore Purchases
-        </button>
-
-        <span>•</span>
-
+      <footer className="pt-3 border-t border-neutral-800/80 flex items-center justify-center text-[11px] font-semibold text-neutral-400">
         <button
           id="btn-footer-privacy"
           onClick={() => {

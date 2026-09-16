@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Sparkles, Gift, Tv, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Sparkles, Gift, Tv } from 'lucide-react';
 import { soundManager } from '../services/sound';
 
 interface Props {
-  hasRemovedAds: boolean;
-  onRemoveAds: () => void;
+  hasRemovedAds?: boolean;
+  onRemoveAds?: () => void;
   onBuyHintPack: (letterCount: number, wordCount: number, autoCount: number, xp: number) => void;
   onWatchRewardedAd: () => void;
   onBack: () => void;
 }
 
 export const ShopModal: React.FC<Props> = ({
-  hasRemovedAds,
-  onRemoveAds,
   onBuyHintPack,
   onWatchRewardedAd,
   onBack
@@ -62,41 +60,6 @@ export const ShopModal: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Remove Ads Card */}
-        <div className="p-5 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl relative overflow-hidden">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <ShieldCheck className="w-7 h-7" />
-              </div>
-              <div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  $1.99 / MONTH
-                </span>
-                <h3 className="text-lg font-black text-white mt-1">Remove Ads</h3>
-                <p className="text-xs text-neutral-400">$1.99 per month • Enjoy uninterrupted ad-free offline gameplay.</p>
-              </div>
-            </div>
-          </div>
-
-          <motion.button
-            disabled={hasRemovedAds}
-            whileHover={!hasRemovedAds ? { scale: 1.02 } : {}}
-            whileTap={!hasRemovedAds ? { scale: 0.98 } : {}}
-            onClick={() => {
-              onRemoveAds();
-              triggerFeedback('Subscribed! Ad-Free Pass active ($1.99/mo).');
-            }}
-            className={`w-full py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              hasRemovedAds
-                ? 'bg-neutral-900 text-neutral-400 border border-neutral-800 cursor-default'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'
-            }`}
-          >
-            {hasRemovedAds ? <Check className="w-4 h-4 text-emerald-400" /> : null}
-            <span>{hasRemovedAds ? 'SUBSCRIBED ($1.99/MO) • ACTIVE' : 'SUBSCRIBE FOR $1.99 / MONTH'}</span>
-          </motion.button>
-        </div>
 
         {/* Free Daily / Rewarded Bonus */}
         <div className="p-4 rounded-3xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">

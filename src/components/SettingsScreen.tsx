@@ -6,12 +6,10 @@ import {
   Music, 
   Smartphone, 
   Globe, 
-  ShieldCheck, 
   Shield, 
   FileText, 
   Check, 
-  Eye,
-  RefreshCw
+  Eye
 } from 'lucide-react';
 import { LanguageCode, UserProgress, UserSettings } from '../types';
 import { soundManager } from '../services/sound';
@@ -266,71 +264,11 @@ export const SettingsScreen: React.FC<Props> = ({
         </div>
       </motion.div>
 
-      {/* 4. Support & Passes */}
+      {/* 4. Legal & Policies */}
       <motion.div 
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.16 }}
-        className="p-4 rounded-3xl bg-slate-50 border border-slate-100 space-y-2.5"
-      >
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          {t('shop')}
-        </h3>
-
-        {/* Remove Ads Row */}
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-bold text-slate-900">{t('removeAds')}</div>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                  $1.99 / MO
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-400">$1.99 per month • Pure offline ad-free play</div>
-            </div>
-          </div>
-          <button
-            disabled={progress.hasRemovedAds}
-            onClick={() => {
-              soundManager.playTap();
-              onRemoveAds();
-              showNotification('Subscribed! Ad-Free Pass active ($1.99/mo)');
-            }}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-              progress.hasRemovedAds
-                ? 'bg-slate-100 text-slate-400 cursor-default'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-            }`}
-          >
-            {progress.hasRemovedAds ? 'Active ($1.99/mo)' : '$1.99 / mo'}
-          </button>
-        </div>
-
-        {/* Restore Purchases */}
-        <button
-          onClick={() => {
-            soundManager.playTap();
-            showNotification(t('saveSuccessful'));
-          }}
-          className="w-full p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 flex items-center justify-between text-xs font-bold text-slate-700 cursor-pointer transition-colors shadow-xs"
-        >
-          <div className="flex items-center gap-2.5">
-            <RefreshCw className="w-4 h-4 text-slate-500" />
-            <span>{t('restorePurchases')}</span>
-          </div>
-          <span className="text-slate-400 text-[11px]">✓</span>
-        </button>
-      </motion.div>
-
-      {/* 5. Legal & Policies */}
-      <motion.div 
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.20 }}
         className="p-4 rounded-3xl bg-slate-50 border border-slate-100 space-y-2"
       >
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
