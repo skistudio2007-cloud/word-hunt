@@ -1,0 +1,9 @@
+{
+  "wordhunter_remove_ads": {
+    "itemType": "ENTITLED",
+    "price": "199.00",
+    "title": "Remove Ads",
+    "description": "Pure ad-free offline gameplay for Word Hunter",
+    "smallIconUrl": "https://raw.githubusercontent.com/skistudio2007-cloud/word-hunt/main/public/app-icon.png"
+  }
+}

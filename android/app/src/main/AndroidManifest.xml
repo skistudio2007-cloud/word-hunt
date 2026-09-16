@@ -49,7 +49,23 @@
         <meta-data
             android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
             android:value="true" />
+
+        <!-- Amazon Appstore In-App Purchasing ResponseReceiver -->
+        <receiver
+            android:name="com.amazon.device.iap.ResponseReceiver"
+            android:permission="com.amazon.inapp.purchasing.Permission.NOTIFY"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.amazon.inapp.purchasing.NOTIFY" />
+            </intent-filter>
+        </receiver>
     </application>
+
+    <!-- Queries for Amazon Appstore & App Tester on Android 11+ (API 30+) -->
+    <queries>
+        <package android:name="com.amazon.venezia" />
+        <package android:name="com.amazon.sdktestclient" />
+    </queries>
 
     <!-- Permissions -->
 
