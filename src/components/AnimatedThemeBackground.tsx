@@ -43,7 +43,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
       ? world.bgDecorations 
       : ['✨', '🌟', '💫'];
 
-    const count = variant === 'home' ? 16 : 6;
+    const count = variant === 'home' ? 12 : 3;
     const list: Particle[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -73,7 +73,7 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
   // Floating Alphabet Letter Tiles (W, O, R, D, H, U, N, T...)
   const letterTiles = useMemo(() => {
     const letters = ['W', 'O', 'R', 'D', 'H', 'U', 'N', 'T', 'S', 'E', 'A', 'R', 'C', 'H'];
-    const count = variant === 'home' ? 8 : 6;
+    const count = variant === 'home' ? 6 : 2;
     const list: LetterTile[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -178,20 +178,21 @@ export const AnimatedThemeBackground: React.FC<Props> = React.memo(({
     <div 
       id="animated-theme-background" 
       className="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none bg-white"
+      style={{ contain: 'strict' }}
     >
       {/* 1. Hardware-Accelerated Ambient Gradient Background (Zero GPU Blur Penalty) */}
       <div
-        className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80 anim-bg-pulse"
-        style={{ background: themeStyles.blob1 }}
+        className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
+        style={{ background: themeStyles.blob1, transform: 'translateZ(0)' }}
       />
       <div
-        className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80 anim-bg-pulse"
-        style={{ background: themeStyles.blob2, animationDelay: '4s' }}
+        className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none opacity-80"
+        style={{ background: themeStyles.blob2, transform: 'translateZ(0)' }}
       />
       {variant === 'home' && (
         <div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60 anim-bg-pulse"
-          style={{ background: themeStyles.blob3, animationDelay: '2s' }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none opacity-60"
+          style={{ background: themeStyles.blob3, transform: 'translateZ(0)' }}
         />
       )}
 

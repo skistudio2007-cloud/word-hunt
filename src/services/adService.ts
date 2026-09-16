@@ -4,26 +4,14 @@
  * Features background ad preloading for zero-latency playback.
  */
 
-import { Capacitor, PluginListenerHandle } from '@capacitor/core';
-import { 
-  AdMob, 
-  AdMobInitializationOptions, 
-  RewardAdPluginEvents, 
-  AdMobRewardItem, 
-  AdMobError 
-} from '@capacitor-community/admob';
+import { Capacitor } from '@capacitor/core';
+import { AdMob, AdMobInitializationOptions } from '@capacitor-community/admob';
 
 export interface AdConfig {
   appId: string;
   rewardedAdUnitId: string;
   interstitialAdUnitId: string;
   isTestMode: boolean;
-}
-
-export interface ShowRewardVideoResult {
-  success: boolean;
-  earnedReward: boolean;
-  message?: string;
 }
 
 // Official User Production AdMob IDs
@@ -38,7 +26,6 @@ class AdMobService {
   private config: AdConfig = { ...DEFAULT_AD_CONFIG };
   private isInitialized = false;
   private isAdPlaying = false;
-  private adSessionActive = false;
   private isRewardedReady = false;
   private isInterstitialReady = false;
   private initPromise: Promise<void> | null = null;
@@ -94,134 +81,37 @@ class AdMobService {
 
   /**
    * Shows a real Google AdMob Rewarded Video.
-   * Uses the official AdMob reward event as the sole authority for earnedReward.
+   * Resolves when the user completes watching and earns the reward.
    */
-  public async showRewardVideo(): Promise<ShowRewardVideoResult> {
+  public async showRewardVideo(): Promise<{ success: boolean; earnedReward: boolean; message?: string }> {
     if (!Capacitor.isNativePlatform()) {
       return { success: false, earnedReward: false, message: 'web_platform' };
     }
 
-    if (this.adSessionActive) {
-      console.warn('⚠️ Rewarded ad session already active. Ignoring new request.');
-      return { success: false, earnedReward: false, message: 'session_already_active' };
-    }
-
     await this.initialize();
-    this.adSessionActive = true;
     this.isAdPlaying = true;
 
     try {
       if (!this.isRewardedReady) {
         const ready = await this.preloadRewardVideo();
         if (!ready) {
-          this.adSessionActive = false;
           this.isAdPlaying = false;
           return { success: false, earnedReward: false, message: 'ad_load_failed' };
         }
       }
 
       this.isRewardedReady = false;
-
-      return await new Promise<ShowRewardVideoResult>(async (resolve) => {
-        let rewardEarned = false;
-        let rewardHandled = false;
-        let adDidShow = false;
-        let isSessionEnded = false;
-        const listenerHandles: PluginListenerHandle[] = [];
-
-        const cleanupAndFinish = async (result: ShowRewardVideoResult) => {
-          if (isSessionEnded) return;
-          isSessionEnded = true;
-
-          // Remove all attached session listeners
-          for (const handle of listenerHandles) {
-            try {
-              await handle.remove();
-            } catch (e) {
-              console.warn('Error removing ad listener:', e);
-            }
-          }
-
-          this.adSessionActive = false;
-          this.isAdPlaying = false;
-
-          // Background preload next ad for future use
-          this.preloadRewardVideo().catch(() => {});
-
-          resolve(result);
-        };
-
-        try {
-          // 1. Listen for official AdMob reward event
-          const rewardSub = await AdMob.addListener(RewardAdPluginEvents.Rewarded, (rewardItem: AdMobRewardItem) => {
-            console.log('🎯 AdMob RewardAdPluginEvents.Rewarded received:', rewardItem);
-            rewardEarned = true;
-          });
-          listenerHandles.push(rewardSub);
-
-          // 2. Listen for Ad Showed
-          const showSub = await AdMob.addListener(RewardAdPluginEvents.Showed, () => {
-            console.log('📺 AdMob Rewarded Ad Showed on screen');
-            adDidShow = true;
-          });
-          listenerHandles.push(showSub);
-
-          // 3. Listen for Failed to Show
-          const failShowSub = await AdMob.addListener(RewardAdPluginEvents.FailedToShow, (err: AdMobError) => {
-            console.error('❌ AdMob Rewarded Ad Failed to Show:', err);
-            cleanupAndFinish({ success: false, earnedReward: false, message: 'ad_show_failed' });
-          });
-          listenerHandles.push(failShowSub);
-
-          // 4. Listen for Ad Dismissed (Ad closed / skipped)
-          const dismissSub = await AdMob.addListener(RewardAdPluginEvents.Dismissed, async () => {
-            console.log('🚪 AdMob Rewarded Ad Dismissed');
-            // If reward was not yet marked earned when dismissed event fires,
-            // wait up to 800ms polling every 50ms to allow asynchronous bridge delivery
-            // of OnUserEarnedRewardListener or showRewardVideoAd promise resolution (addresses TEST 5)
-            if (!rewardEarned) {
-              const startWait = Date.now();
-              while (!rewardEarned && (Date.now() - startWait) < 800) {
-                await new Promise(r => setTimeout(r, 50));
-              }
-            }
-
-            if (rewardEarned && !rewardHandled) {
-              rewardHandled = true;
-              console.log('✅ Ad closed with rewardEarned = true. Granting reward.');
-              cleanupAndFinish({ success: true, earnedReward: true });
-            } else if (!rewardHandled) {
-              rewardHandled = true;
-              console.log('🛑 Ad closed without rewardEarned. Early close.');
-              cleanupAndFinish({ success: true, earnedReward: false, message: 'ad_closed_early' });
-            }
-          });
-          listenerHandles.push(dismissSub);
-
-          // 5. Invoke native showRewardVideoAd
-          AdMob.showRewardVideoAd()
-            .then((rewardResult) => {
-              console.log('🎯 AdMob.showRewardVideoAd promise resolved:', rewardResult);
-              rewardEarned = true;
-            })
-            .catch((showErr) => {
-              console.warn('AdMob.showRewardVideoAd promise caught:', showErr);
-              // If ad never showed, immediately fail
-              if (!adDidShow) {
-                cleanupAndFinish({ success: false, earnedReward: false, message: 'ad_show_failed' });
-              }
-              // If ad did show, dismissal listener will decide early close vs earned
-            });
-
-        } catch (setupError) {
-          console.error('Error attaching listeners or showing ad:', setupError);
-          cleanupAndFinish({ success: false, earnedReward: false, message: String(setupError) });
-        }
-      });
-    } catch (error) {
-      this.adSessionActive = false;
+      const result = await AdMob.showRewardVideoAd();
       this.isAdPlaying = false;
-      console.error('AdMob showRewardVideo error:', error);
+
+      // Preload next ad in background
+      this.preloadRewardVideo().catch(() => {});
+
+      return { success: true, earnedReward: true };
+    } catch (error) {
+      this.isAdPlaying = false;
+      console.error('AdMob showRewardVideoAd error:', error);
+      // Preload next ad in background
       this.preloadRewardVideo().catch(() => {});
       return { success: false, earnedReward: false, message: String(error) };
     }
@@ -303,10 +193,6 @@ class AdMobService {
 
   public isPlaying(): boolean {
     return this.isAdPlaying;
-  }
-
-  public isSessionActive(): boolean {
-    return this.adSessionActive || this.isAdPlaying;
   }
 
   public setPlaying(playing: boolean): void {

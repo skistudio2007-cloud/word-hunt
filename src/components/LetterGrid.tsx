@@ -24,6 +24,7 @@ interface LetterCellProps {
   isHinted: boolean;
   isJustFound: boolean;
   isCompleting: boolean;
+  isInitialDrop: boolean;
 }
 
 const LetterCell = React.memo<LetterCellProps>(
@@ -39,6 +40,7 @@ const LetterCell = React.memo<LetterCellProps>(
     isHinted,
     isJustFound,
     isCompleting,
+    isInitialDrop,
   }) => {
     const dropDelay = `${(rowIndex * gridSize + colIndex) * 0.022}s`;
     const victoryDelay = `${(rowIndex + colIndex) * 0.045}s`;
@@ -46,14 +48,16 @@ const LetterCell = React.memo<LetterCellProps>(
     return (
       <div
         id={`letter-cell-${cellKey}`}
-        className={`relative flex items-center justify-center rounded-xl font-black transition-[transform,background-color,color] duration-100 ease-out select-none ${
+        className={`relative flex items-center justify-center rounded-xl font-black select-none ${
           isCompleting
             ? 'anim-victory-wave z-20 transform-gpu'
             : isJustFound
             ? 'anim-word-pop z-30 transform-gpu'
             : isSelected
             ? 'scale-110 -rotate-1 z-20 transform-gpu'
-            : 'scale-100 z-10 anim-tile-drop'
+            : isInitialDrop
+            ? 'scale-100 z-10 anim-tile-drop'
+            : 'scale-100 z-10'
         } ${
           isSelected
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
@@ -65,7 +69,8 @@ const LetterCell = React.memo<LetterCellProps>(
         }`}
         style={{
           touchAction: 'none',
-          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay,
+          contain: 'layout paint',
+          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : isInitialDrop ? dropDelay : '0s',
           ...(!isSelected && isFound && primaryFoundColor
             ? {
                 backgroundColor: `${primaryFoundColor}20`,
@@ -90,17 +95,15 @@ const LetterCell = React.memo<LetterCellProps>(
               : isFound
               ? 'font-black'
               : 'font-extrabold'
+          } ${
+            gridSize <= 5
+              ? 'text-2xl sm:text-3xl'
+              : gridSize <= 7
+              ? 'text-xl sm:text-2xl'
+              : gridSize <= 8
+              ? 'text-lg sm:text-xl'
+              : 'text-base sm:text-lg'
           }`}
-          style={{
-            fontSize:
-              gridSize <= 5
-                ? 'clamp(18px, min(6vw, 3.2dvh), 28px)'
-                : gridSize <= 6
-                ? 'clamp(16px, min(5vw, 2.8dvh), 24px)'
-                : gridSize <= 7
-                ? 'clamp(14px, min(4.2vw, 2.4dvh), 21px)'
-                : 'clamp(12px, min(3.6vw, 2.0dvh), 18px)'
-          }}
         >
           {letter}
         </span>
@@ -116,6 +119,7 @@ const LetterCell = React.memo<LetterCellProps>(
       prev.isHinted === next.isHinted &&
       prev.isJustFound === next.isJustFound &&
       prev.isCompleting === next.isCompleting &&
+      prev.isInitialDrop === next.isInitialDrop &&
       prev.gridSize === next.gridSize
     );
   }
@@ -138,7 +142,17 @@ export const LetterGrid: React.FC<Props> = ({
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
   const [isWrongSelection, setIsWrongSelection] = useState(false);
   const [justFoundCells, setJustFoundCells] = useState<Coordinate[] | null>(null);
+  const [isInitialDrop, setIsInitialDrop] = useState(true);
   const prevFoundCountRef = useRef(words.filter(w => w.found).length);
+
+  // Initial staggered drop animation only runs for the first 500ms
+  React.useEffect(() => {
+    setIsInitialDrop(true);
+    const timer = setTimeout(() => {
+      setIsInitialDrop(false);
+    }, 550);
+    return () => clearTimeout(timer);
+  }, [grid]);
 
   // Trigger subtle pop when a word is marked found
   React.useEffect(() => {
@@ -153,6 +167,16 @@ export const LetterGrid: React.FC<Props> = ({
     }
     prevFoundCountRef.current = currentFoundWords.length;
   }, [words]);
+
+  // O(1) hash lookup set for just found cells
+  const justFoundSet = React.useMemo(() => {
+    if (!justFoundCells || justFoundCells.length === 0) return null;
+    const s = new Set<string>();
+    for (let i = 0; i < justFoundCells.length; i++) {
+      s.add(`${justFoundCells[i].row}-${justFoundCells[i].col}`);
+    }
+    return s;
+  }, [justFoundCells]);
 
   const gridSize = grid.length;
 
@@ -429,13 +453,7 @@ export const LetterGrid: React.FC<Props> = ({
   }, [words, gridSize]);
 
   return (
-    <div 
-      className="relative aspect-square mx-auto p-1 sm:p-2 select-none touch-none shrink-0"
-      style={{
-        width: 'min(92vw, 46dvh, 390px)',
-        height: 'min(92vw, 46dvh, 390px)',
-      }}
-    >
+    <div className="relative w-full max-w-[400px] aspect-square mx-auto p-1 sm:p-2 select-none touch-none">
       {/* Large White Rounded Puzzle Board with subtle bounce on victory */}
       <motion.div 
         animate={
@@ -512,7 +530,7 @@ export const LetterGrid: React.FC<Props> = ({
               const isFound = !!(foundColors && foundColors.length > 0);
               const primaryFoundColor = isFound ? foundColors![foundColors!.length - 1] : undefined;
               const isHinted = !!(hintStartCell && hintStartCell.row === r && hintStartCell.col === c);
-              const isJustFound = !!justFoundCells?.some(coord => coord.row === r && coord.col === c);
+              const isJustFound = !!(justFoundSet && justFoundSet.has(cellKey));
 
               return (
                 <LetterCell
@@ -528,6 +546,7 @@ export const LetterGrid: React.FC<Props> = ({
                   isHinted={isHinted}
                   isJustFound={isJustFound}
                   isCompleting={isCompleting}
+                  isInitialDrop={isInitialDrop}
                 />
               );
             })

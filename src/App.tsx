@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Capacitor } from '@capacitor/core';
 import { 
@@ -88,10 +88,6 @@ export default function App() {
   const [selectedWordForInfo, setSelectedWordForInfo] = useState<PlacedWord | null>(null);
   const [hintStartCell, setHintStartCell] = useState<{ row: number; col: number } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
-
-  // Rewarded Ad and Hint Transaction State Refs (preventing double grants & multi-taps)
-  const isRewardedSessionActiveRef = useRef(false);
-  const isGrantingHintRef = useRef(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -187,7 +183,6 @@ export default function App() {
         // Step 2: Play victory fanfare and transition to clean win screen
         setTimeout(() => {
           soundManager.playLevelVictory();
-          setIsLevelCompleting(false);
           setGameState('LEVEL_COMPLETE');
 
           const solveTimeSecs = Math.max(5, Math.round((Date.now() - levelStartTime) / 1000));
@@ -275,61 +270,10 @@ export default function App() {
     return true;
   }, [puzzleWords]);
 
-  // Centralized function for granting exactly ONE rewarded hint (Requirement 7)
-  const grantRewardedHint = useCallback(() => {
-    // Prevent duplicate grants in the same transaction (Requirement 4)
-    if (isGrantingHintRef.current) {
-      console.warn('⚠️ grantRewardedHint duplicate execution prevented');
-      return;
-    }
-    isGrantingHintRef.current = true;
-
-    // 1. Grant exactly +1 hint and update state & persistence
-    setProgress(prev => {
-      const updated: UserProgress = {
-        ...prev,
-        stats: {
-          ...prev.stats,
-          hintsUsed: prev.stats.hintsUsed + 1
-        }
-      };
-      StorageService.saveProgress(updated);
-      return updated;
-    });
-
-    // 2. Trigger existing hint application behavior
-    const applied = applyLetterHintHighlight();
-    if (applied) {
-      showToast('Hint Unlocked from Ad & Applied!');
-    } else {
-      // If unable to apply immediately (e.g. puzzle solved), preserve hint in inventory
-      setProgress(prev => {
-        const updated: UserProgress = {
-          ...prev,
-          purchasedHints: (prev.purchasedHints || 0) + 1
-        };
-        StorageService.saveProgress(updated);
-        return updated;
-      });
-      showToast('Hint Unlocked from Ad & Saved!');
-    }
-
-    // 3. Reset lock after safe window to protect against any race conditions
-    setTimeout(() => {
-      isGrantingHintRef.current = false;
-    }, 1200);
-  }, [applyLetterHintHighlight]);
-
   // Main direct Hint Button handler (Gameplay Screen Header)
   const handleMainHintTap = useCallback(() => {
     const unfoundWords = puzzleWords.filter(w => !w.found);
     if (unfoundWords.length === 0) return;
-
-    // Prevent rapid multi-taps during active ad session (Requirement 8)
-    if (isRewardedSessionActiveRef.current || adService.isSessionActive()) {
-      console.log('Rewarded ad session in progress, ignoring tap');
-      return;
-    }
 
     const purchasedLetter = (progress.purchasedHints || 0) + (progress.hintsRevealLetter || 0);
 
@@ -343,14 +287,12 @@ export default function App() {
         } else if (newLetter > 0) {
           newLetter -= 1;
         }
-        const updated: UserProgress = {
+        return {
           ...p,
           purchasedHints: newPurchased,
           hintsRevealLetter: newLetter,
           stats: { ...p.stats, hintsUsed: p.stats.hintsUsed + 1 }
         };
-        StorageService.saveProgress(updated);
-        return updated;
       });
       applyLetterHintHighlight();
       showToast('Purchased Hint Applied');
@@ -359,43 +301,41 @@ export default function App() {
 
     // 2. WATCH GOOGLE REWARDED AD FOR HINT
     if (Capacitor.isNativePlatform()) {
-      isRewardedSessionActiveRef.current = true;
       showToast('Loading Google Ad...');
-
-      adService.showRewardVideo()
-        .then(result => {
-          if (result.earnedReward) {
-            grantRewardedHint();
-          } else if (result.message === 'ad_closed_early') {
-            showToast('Ad closed earlier, hint not granted');
-          } else {
-            showToast('Ads not available');
-          }
-        })
-        .catch(err => {
-          console.warn('Ad session error:', err);
+      adService.showRewardVideo().then(result => {
+        if (result.earnedReward) {
+          handleRewardedAdReward();
+        } else if (result.message === 'ad_load_failed') {
           showToast('Ads not available');
-        })
-        .finally(() => {
-          isRewardedSessionActiveRef.current = false;
-        });
+        } else {
+          showToast('Ad closed early. No hint granted.');
+        }
+      }).catch(() => {
+        showToast('Ads not available');
+      });
       return;
     }
 
     showToast('Ads not available');
-  }, [puzzleWords, progress, applyLetterHintHighlight, grantRewardedHint]);
+  }, [puzzleWords, progress, applyLetterHintHighlight]);
 
   // Handle Rewarded Ad completion
   const handleRewardedAdReward = useCallback(() => {
-    grantRewardedHint();
-  }, [grantRewardedHint]);
+    // Reward exactly 1 hint and immediately apply it to gameplay
+    setProgress(p => ({
+      ...p,
+      stats: { ...p.stats, hintsUsed: p.stats.hintsUsed + 1 }
+    }));
+    applyLetterHintHighlight();
+    showToast('Hint Unlocked from Ad & Applied!');
+  }, [applyLetterHintHighlight]);
 
   // Handle Rewarded Ad cancellation or failure
   const handleRewardedAdCancel = useCallback((reason?: string) => {
     if (reason) {
       showToast(reason);
     } else {
-      showToast('Ad closed earlier, hint not granted');
+      showToast('Ad unavailable. Please try again.');
     }
   }, []);
 
@@ -454,8 +394,8 @@ export default function App() {
   const currentWorld = getWorldForLevel(currentPuzzle?.levelNumber || progress.currentLevel);
 
   return (
-    <div className="w-full min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-x-hidden font-sans select-none">
-      <div className="w-full max-w-[480px] min-h-[100dvh] bg-white shadow-xl flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-start overflow-x-hidden font-sans select-none">
+      <div className="w-full max-w-[440px] min-h-screen bg-white shadow-xl flex flex-col relative">
         
         {/* Toast Feedback Notification Banner */}
         <AnimatePresence>
@@ -474,7 +414,7 @@ export default function App() {
 
         {/* 1. Main Navigation Screens (When Game State is MAIN_MENU) */}
         {gameState === 'MAIN_MENU' && (
-          <div className="w-full flex-1 flex flex-col overflow-y-auto overflow-x-hidden pb-[75px] overscroll-y-contain">
+          <div className="w-full flex-1 flex flex-col overflow-hidden">
             <AnimatePresence mode="wait" custom={tabDirection}>
               {/* Tab 1: HOME */}
               {activeTab === 'HOME' && (
@@ -576,7 +516,7 @@ export default function App() {
         {/* 2. Active Level / Challenge Gameplay Screen (Stays visible during LEVEL_COMPLETE under the modal) */}
         {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING' || gameState === 'LEVEL_COMPLETE') && currentPuzzle && (
           <div
-            className="w-full min-h-[100dvh] flex-1 bg-white flex flex-col justify-between p-2 pb-3 sm:pb-4 relative overflow-y-auto overflow-x-hidden overscroll-y-contain"
+            className="w-full min-h-screen bg-white flex flex-col justify-between p-2 pb-6 relative overflow-hidden"
           >
             {/* Theme-based Animated Dynamic Background */}
             <AnimatedThemeBackground 
@@ -585,7 +525,7 @@ export default function App() {
             />
 
             {/* Top Header with direct Hint button */}
-            <div className="relative z-10 w-full shrink-0">
+            <div className="relative z-10 w-full">
               <TopHeader
                 levelNumber={currentPuzzle.levelNumber}
                 themeName={activeChallenge ? activeChallenge.title : currentPuzzle.theme}
@@ -600,8 +540,8 @@ export default function App() {
               />
             </div>
 
-            {/* Center Letter Grid & Responsive Words Container */}
-            <main className="flex-1 flex flex-col items-center justify-start my-auto w-full relative z-10 py-1">
+            {/* Center Letter Grid */}
+            <main className="my-auto relative z-10">
               <LetterGrid
                 key={`grid-lvl-${currentPuzzle.levelNumber}-${currentPuzzle.seed || ''}`}
                 grid={currentPuzzle.grid}
@@ -609,21 +549,19 @@ export default function App() {
                 onWordFound={handleWordFound}
                 hintStartCell={hintStartCell}
                 highContrast={settings.highContrast}
-                isCompleting={gameState === 'PLAYING' && isLevelCompleting}
+                isCompleting={isLevelCompleting}
               />
 
-              {/* Target Words List with proportional scroll-safe container */}
-              <div className="w-full max-w-[440px] px-2 py-1">
-                <WordList
-                  words={puzzleWords}
-                  onSelectWordForInfo={w => setSelectedWordForInfo(w)}
-                  highContrast={settings.highContrast}
-                />
-              </div>
+              {/* Target Words List */}
+              <WordList
+                words={puzzleWords}
+                onSelectWordForInfo={w => setSelectedWordForInfo(w)}
+                highContrast={settings.highContrast}
+              />
             </main>
 
             {/* Bottom Educational Hint Tip */}
-            <footer className="shrink-0 text-center py-1 relative z-10">
+            <footer className="text-center pt-2 relative z-10">
               <p className="text-[11px] font-bold text-slate-700 bg-white/95 py-1 px-3 rounded-full inline-block shadow-2xs border border-slate-200/60">
                 💡 Swipe letters to find words
               </p>

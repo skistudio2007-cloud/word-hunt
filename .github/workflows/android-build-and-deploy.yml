@@ -89,18 +89,21 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.16
+      - name: Create or Update GitHub Release v1.0.14
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.16
-          name: "Word Hunt v1.0.16 - Touch Scrolling & Win Celebration"
+          tag_name: v1.0.14
+          name: "Word Hunt v1.0.14 - Ultra-Smooth 60-120 FPS Lag Fixes"
           body: |
-            ### 🎮 Word Hunt v1.0.16 - Touch Scrolling & Win Celebration
+            ### 🎮 Word Hunt v1.0.14 - Ultra-Smooth 60-120 FPS Lag Fixes
 
-            - 📱 **Smooth Vertical Scrolling**: Removed restrictive `max-h-[100dvh]` and `overflow-hidden` constraints across all screens, enabling fluid 1-finger vertical touch scrolling while isolating `LetterGrid` touch drag gestures.
-            - 🎉 **Win Pop Celebration**: Added a lightweight, GPU-composited radial burst animation (16 particles + badge pop) upon level completion without blocking the Next button.
-            - 🚀 **Version Bump**: Updated `versionCode` to 16 and `versionName` to 1.0.16.
+            - 🚀 **Zero Swiping Jitter**: Fixed unselected tiles re-triggering entrance drop animation on touch drags (`isInitialDrop` guard).
+            - ⚡ **Instant Touch Tracking**: Removed CSS transform transition lag from individual cells; touch swiping now maps 1:1 with finger position without delay.
+            - 🎯 **O(1) Cell Matching Lookup**: Replaced per-cell array search with instant hash set lookup for found tiles.
+            - 🛡️ **GPU Layout Containment**: Added `contain: layout paint` on cells and `contain: strict` on background to stop layout re-flows.
+            - ✨ **Lag-Free Victory Celebration**: Streamlined confetti and GPU radial aura for smooth win celebration without GPU frame drops.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 14 and `versionName` to 1.0.14.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab
