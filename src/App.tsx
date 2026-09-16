@@ -306,18 +306,17 @@ export default function App() {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
-          // If native Google ad failed to load, fallback to modal
-          setIsRewardedAdOpen(true);
+          showToast('Ads not available');
         } else {
           showToast('Ad closed early. No hint granted.');
         }
       }).catch(() => {
-        setIsRewardedAdOpen(true);
+        showToast('Ads not available');
       });
       return;
     }
 
-    setIsRewardedAdOpen(true);
+    showToast('Ads not available');
   }, [puzzleWords, progress, applyLetterHintHighlight]);
 
   // Handle Rewarded Ad completion
