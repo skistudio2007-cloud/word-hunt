@@ -14,6 +14,7 @@ export interface ProductDetails {
   description: string;
   price: string;
   type: ProductType;
+  subscriptionPeriod?: 'Monthly' | 'Annual';
 }
 
 export interface PurchaseResult {

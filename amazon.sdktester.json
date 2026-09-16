@@ -1,9 +1,10 @@
 {
   "wordhunter_remove_ads": {
-    "itemType": "ENTITLED",
-    "price": "199.00",
+    "itemType": "SUBSCRIPTION",
+    "price": "1.99",
+    "subscriptionPeriod": "Monthly",
     "title": "Remove Ads",
-    "description": "Pure ad-free offline gameplay for Word Hunter",
+    "description": "Ad-free monthly subscription for Word Hunter. Auto-renews at $1.99/month until cancelled.",
     "smallIconUrl": "https://raw.githubusercontent.com/skistudio2007-cloud/word-hunt/main/public/app-icon.png"
   }
 }

@@ -89,9 +89,10 @@ class UnifiedBillingService {
     return {
       productId: AMAZON_SKU_REMOVE_ADS,
       title: 'Remove Ads',
-      description: 'Pure ad-free offline gameplay',
-      price: '₹199',
-      type: 'ENTITLED'
+      description: 'Ad-free monthly subscription ($1.99/mo)',
+      price: '$1.99 / mo',
+      type: 'SUBSCRIPTION',
+      subscriptionPeriod: 'Monthly'
     };
   }
 

@@ -347,10 +347,10 @@ export const SettingsScreen: React.FC<Props> = ({
               <div className="flex items-center gap-2">
                 <div className="text-sm font-bold text-slate-900">{t('removeAds')}</div>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                  {productInfo?.price || '₹199'}
+                  {productInfo?.price || '$1.99 / mo'}
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">One-Time • Pure offline ad-free play</div>
+              <div className="text-[11px] text-slate-400">Monthly • $1.99 / month • Auto-renews • Cancel anytime</div>
             </div>
           </div>
           <button
@@ -365,10 +365,10 @@ export const SettingsScreen: React.FC<Props> = ({
             }`}
           >
             {progress.hasRemovedAds
-              ? 'Active'
+              ? 'Active ($1.99/mo)'
               : isPurchasing
               ? 'Processing...'
-              : productInfo?.price || '₹199'}
+              : productInfo?.price || '$1.99 / mo'}
           </button>
         </div>
 

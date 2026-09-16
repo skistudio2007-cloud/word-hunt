@@ -115,26 +115,27 @@ export default function App() {
   useEffect(() => {
     billingService.initialize().catch(() => {});
 
-    // Check store entitlement on startup
+    // Check store subscription entitlement on startup
     billingService.checkEntitlementsOnStartup().then(isEntitled => {
-      if (isEntitled) {
-        console.log('✅ Amazon IAP: Verified Remove Ads entitlement on startup');
-        setProgress(p => {
-          if (!p.hasRemovedAds) {
-            return { ...p, hasRemovedAds: true };
-          }
-          return p;
-        });
-      }
+      console.log('✅ Amazon IAP: Verified Remove Ads subscription status on startup:', isEntitled);
+      setProgress(p => {
+        if (p.hasRemovedAds !== isEntitled) {
+          return { ...p, hasRemovedAds: isEntitled };
+        }
+        return p;
+      });
     }).catch(err => {
-      console.warn('Startup entitlement check:', err);
+      console.warn('Startup subscription check:', err);
     });
 
-    // Real-time listener for Amazon purchase completion / fulfillment
+    // Real-time listener for Amazon purchase completion, fulfillment, or expiration
     const unsubscribe = billingService.onEntitlementChanged(hasRemovedAds => {
-      if (hasRemovedAds) {
-        setProgress(p => ({ ...p, hasRemovedAds: true }));
-      }
+      setProgress(p => {
+        if (p.hasRemovedAds !== hasRemovedAds) {
+          return { ...p, hasRemovedAds };
+        }
+        return p;
+      });
     });
 
     return () => {

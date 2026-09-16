@@ -57,9 +57,10 @@ export class AmazonBillingProvider implements IBillingProvider {
         map.set(id, {
           productId: id,
           title: 'Remove Ads',
-          description: 'Pure ad-free offline gameplay',
-          price: '₹199',
-          type: 'ENTITLED'
+          description: 'Ad-free monthly subscription for Word Hunter ($1.99/mo)',
+          price: '$1.99 / mo',
+          type: 'SUBSCRIPTION',
+          subscriptionPeriod: 'Monthly'
         });
       }
       return map;
@@ -69,7 +70,11 @@ export class AmazonBillingProvider implements IBillingProvider {
       const res = await AmazonIapNative.getProductData({ skus: productIds });
       if (res.success && res.products) {
         for (const p of res.products) {
-          map.set(p.productId, p);
+          map.set(p.productId, {
+            ...p,
+            type: 'SUBSCRIPTION',
+            subscriptionPeriod: 'Monthly'
+          });
         }
       }
     } catch (e) {
@@ -82,9 +87,10 @@ export class AmazonBillingProvider implements IBillingProvider {
         map.set(id, {
           productId: id,
           title: 'Remove Ads',
-          description: 'Pure ad-free offline gameplay',
-          price: '₹199',
-          type: 'ENTITLED'
+          description: 'Ad-free monthly subscription for Word Hunter ($1.99/mo)',
+          price: '$1.99 / mo',
+          type: 'SUBSCRIPTION',
+          subscriptionPeriod: 'Monthly'
         });
       }
     }

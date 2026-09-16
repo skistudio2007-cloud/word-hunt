@@ -269,6 +269,16 @@ public class AmazonIapPlugin extends Plugin implements PurchasingListener {
         }
     }
 
+    private boolean isSubscriptionActive(Receipt receipt) {
+        if (receipt == null) return false;
+        if (receipt.isCanceled()) return false;
+        java.util.Date cancelDate = receipt.getCancelDate();
+        if (cancelDate != null && cancelDate.before(new java.util.Date())) {
+            return false; // Expired or cancelled
+        }
+        return true;
+    }
+
     @Override
     public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
         RequestId reqId = purchaseResponse.getRequestId();
@@ -280,9 +290,9 @@ public class AmazonIapPlugin extends Plugin implements PurchasingListener {
         switch (status) {
             case SUCCESSFUL:
                 Receipt receipt = purchaseResponse.getReceipt();
-                if (receipt != null && !receipt.isCanceled()) {
+                if (receipt != null && isSubscriptionActive(receipt)) {
                     String sku = receipt.getSku();
-                    Log.d(TAG, "Purchase SUCCESSFUL for SKU: " + sku + ", receiptId: " + receipt.getReceiptId());
+                    Log.d(TAG, "Subscription purchase SUCCESSFUL for SKU: " + sku + ", receiptId: " + receipt.getReceiptId());
 
                     // Notify Amazon Appstore of fulfillment
                     PurchasingService.notifyFulfillment(receipt.getReceiptId(), FulfillmentResult.FULFILLED);
@@ -309,7 +319,7 @@ public class AmazonIapPlugin extends Plugin implements PurchasingListener {
                         JSObject failed = new JSObject();
                         failed.put("success", false);
                         failed.put("state", "FAILED");
-                        failed.put("message", "Receipt was null or canceled");
+                        failed.put("message", "Subscription receipt was null, cancelled or expired");
                         call.resolve(failed);
                     }
                 }
@@ -318,26 +328,27 @@ public class AmazonIapPlugin extends Plugin implements PurchasingListener {
             case ALREADY_PURCHASED:
                 Receipt existingReceipt = purchaseResponse.getReceipt();
                 String ownedSku = existingReceipt != null ? existingReceipt.getSku() : SKU_REMOVE_ADS;
-                Log.d(TAG, "Item ALREADY_PURCHASED: " + ownedSku);
+                boolean active = isSubscriptionActive(existingReceipt);
+                Log.d(TAG, "Subscription ALREADY_PURCHASED: " + ownedSku + " active=" + active);
 
-                if (existingReceipt != null) {
+                if (existingReceipt != null && active) {
                     PurchasingService.notifyFulfillment(existingReceipt.getReceiptId(), FulfillmentResult.FULFILLED);
                 }
                 if (SKU_REMOVE_ADS.equals(ownedSku)) {
-                    setLocalEntitlement(true);
+                    setLocalEntitlement(active);
                 }
 
                 JSObject event = new JSObject();
                 event.put("productId", ownedSku);
-                event.put("hasRemovedAds", true);
+                event.put("hasRemovedAds", active);
                 notifyListeners("entitlementUpdated", event);
 
                 if (call != null) {
                     JSObject already = new JSObject();
-                    already.put("success", true);
-                    already.put("state", "ALREADY_OWNED");
+                    already.put("success", active);
+                    already.put("state", active ? "ALREADY_OWNED" : "CANCELLED");
                     already.put("productId", ownedSku);
-                    already.put("message", "Product is already owned");
+                    already.put("message", active ? "Subscription already active" : "Subscription expired");
                     call.resolve(already);
                 }
                 break;
@@ -392,17 +403,18 @@ public class AmazonIapPlugin extends Plugin implements PurchasingListener {
             if (receipts != null) {
                 for (Receipt r : receipts) {
                     if (SKU_REMOVE_ADS.equals(r.getSku())) {
-                        if (!r.isCanceled()) {
+                        if (isSubscriptionActive(r)) {
                             foundRemoveAds = true;
                             PurchasingService.notifyFulfillment(r.getReceiptId(), FulfillmentResult.FULFILLED);
-                            Log.d(TAG, "Restored active entitlement: " + r.getSku());
+                            Log.d(TAG, "Active subscription verified: " + r.getSku());
                         } else {
-                            Log.d(TAG, "Entitlement was canceled or revoked: " + r.getSku());
+                            Log.d(TAG, "Subscription was canceled or expired: " + r.getSku());
                         }
                     }
                 }
             }
 
+            // If subscription expired or was cancelled, revokes entitlement and reactivates ads!
             setLocalEntitlement(foundRemoveAds);
 
             JSObject event = new JSObject();
