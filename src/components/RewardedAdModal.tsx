@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Tv, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { X, Tv, AlertCircle, ShieldCheck } from 'lucide-react';
 import { soundManager } from '../services/sound';
 import { adService } from '../services/adService';
 import { LanguageCode } from '../types';
@@ -18,64 +18,17 @@ export const RewardedAdModal: React.FC<Props> = ({
   onCancel,
   onClose
 }) => {
-  const TOTAL_DURATION_SECONDS = 5;
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(TOTAL_DURATION_SECONDS);
-  const [progress, setProgress] = useState<number>(0);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [showCloseWarning, setShowCloseWarning] = useState<boolean>(false);
-  const rewardGrantedRef = useRef<boolean>(false);
-
   const adConfig = adService.getConfig();
 
-  useEffect(() => {
-    adService.setPlaying(true);
-
-    const startTime = Date.now();
-    const durationMs = TOTAL_DURATION_SECONDS * 1000;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const currentProgress = Math.min(100, (elapsed / durationMs) * 100);
-      const remainingSecs = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
-
-      setProgress(currentProgress);
-      setSecondsRemaining(remainingSecs);
-
-      if (elapsed >= durationMs) {
-        clearInterval(interval);
-        setIsCompleted(true);
-
-        // Safe Single-Reward execution guard
-        if (!rewardGrantedRef.current) {
-          rewardGrantedRef.current = true;
-          soundManager.playWordSuccess();
-          setTimeout(() => {
-            adService.setPlaying(false);
-            onReward();
-            onClose();
-          }, 600);
-        }
-      }
-    }, 100);
-
-    return () => {
-      clearInterval(interval);
-      adService.setPlaying(false);
-    };
-  }, [onReward, onClose]);
-
   const handleEarlyClose = () => {
-    if (isCompleted) {
-      onClose();
-      return;
-    }
     setShowCloseWarning(true);
   };
 
   const handleConfirmExit = () => {
     soundManager.playTap();
     setShowCloseWarning(false);
-    onCancel('Ad closed early. No hint was granted.');
+    onCancel('Ad closed earlier, hint not granted');
     onClose();
   };
 
@@ -119,47 +72,21 @@ export const RewardedAdModal: React.FC<Props> = ({
           <div className="w-full aspect-video rounded-2xl bg-gradient-to-br from-slate-900 to-blue-950 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden shadow-inner">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent pointer-events-none" />
 
-            {!isCompleted ? (
-              <div className="space-y-2 z-10">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-400/30 text-blue-400 mx-auto flex items-center justify-center animate-pulse">
-                  <Tv className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-white">Watch Ad for 1 Free Hint</h4>
-                  <p className="text-[11px] text-slate-300 font-mono tracking-tight mt-0.5">
-                    ID: {adConfig.rewardedAdUnitId}
-                  </p>
-                </div>
+            <div className="space-y-2 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-400/30 text-blue-400 mx-auto flex items-center justify-center animate-pulse">
+                <Tv className="w-6 h-6" />
               </div>
-            ) : (
-              <div className="space-y-2 z-10 animate-bounce">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-7 h-7" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-white">Reward Earned!</h4>
-                  <p className="text-[11px] text-emerald-300 font-medium">+1 Hint unlocked & applying...</p>
-                </div>
+              <div>
+                <h4 className="text-sm font-black text-white">Watch Ad for 1 Free Hint</h4>
+                <p className="text-[11px] text-slate-300 font-mono tracking-tight mt-0.5">
+                  ID: {adConfig.rewardedAdUnitId}
+                </p>
               </div>
-            )}
+            </div>
 
-            {/* Countdown Badge in corner */}
+            {/* Badge in corner */}
             <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-bold text-white border border-white/10">
-              {isCompleted ? 'Reward Ready' : `Reward in ${secondsRemaining}s`}
-            </div>
-          </div>
-
-          {/* Ad Progress Bar */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-              <span className="font-mono text-[10px]">{adConfig.isTestMode ? 'AdMob Test Unit' : 'AdMob Live Unit'}</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-600 transition-all duration-100 ease-linear rounded-full"
-                style={{ width: `${progress}%` }}
-              />
+              Rewarded Ad
             </div>
           </div>
 

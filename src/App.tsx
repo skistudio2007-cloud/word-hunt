@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Capacitor } from '@capacitor/core';
 import { 
@@ -88,6 +88,10 @@ export default function App() {
   const [selectedWordForInfo, setSelectedWordForInfo] = useState<PlacedWord | null>(null);
   const [hintStartCell, setHintStartCell] = useState<{ row: number; col: number } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+
+  // Rewarded Ad and Hint Transaction State Refs (preventing double grants & multi-taps)
+  const isRewardedSessionActiveRef = useRef(false);
+  const isGrantingHintRef = useRef(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -271,10 +275,48 @@ export default function App() {
     return true;
   }, [puzzleWords]);
 
+  // Centralized function for granting exactly ONE rewarded hint (Requirement 7)
+  const grantRewardedHint = useCallback(() => {
+    // Prevent duplicate grants in the same transaction (Requirement 4)
+    if (isGrantingHintRef.current) {
+      console.warn('⚠️ grantRewardedHint duplicate execution prevented');
+      return;
+    }
+    isGrantingHintRef.current = true;
+
+    // 1. Grant exactly +1 hint and update state & persistence
+    setProgress(prev => {
+      const updated: UserProgress = {
+        ...prev,
+        stats: {
+          ...prev.stats,
+          hintsUsed: prev.stats.hintsUsed + 1
+        }
+      };
+      StorageService.saveProgress(updated);
+      return updated;
+    });
+
+    // 2. Trigger existing hint application behavior
+    applyLetterHintHighlight();
+    showToast('Hint Unlocked from Ad & Applied!');
+
+    // 3. Reset lock after safe window to protect against any race conditions
+    setTimeout(() => {
+      isGrantingHintRef.current = false;
+    }, 1200);
+  }, [applyLetterHintHighlight]);
+
   // Main direct Hint Button handler (Gameplay Screen Header)
   const handleMainHintTap = useCallback(() => {
     const unfoundWords = puzzleWords.filter(w => !w.found);
     if (unfoundWords.length === 0) return;
+
+    // Prevent rapid multi-taps during active ad session (Requirement 8)
+    if (isRewardedSessionActiveRef.current || adService.isSessionActive()) {
+      console.log('Rewarded ad session in progress, ignoring tap');
+      return;
+    }
 
     const purchasedLetter = (progress.purchasedHints || 0) + (progress.hintsRevealLetter || 0);
 
@@ -288,12 +330,14 @@ export default function App() {
         } else if (newLetter > 0) {
           newLetter -= 1;
         }
-        return {
+        const updated: UserProgress = {
           ...p,
           purchasedHints: newPurchased,
           hintsRevealLetter: newLetter,
           stats: { ...p.stats, hintsUsed: p.stats.hintsUsed + 1 }
         };
+        StorageService.saveProgress(updated);
+        return updated;
       });
       applyLetterHintHighlight();
       showToast('Purchased Hint Applied');
@@ -302,41 +346,43 @@ export default function App() {
 
     // 2. WATCH GOOGLE REWARDED AD FOR HINT
     if (Capacitor.isNativePlatform()) {
+      isRewardedSessionActiveRef.current = true;
       showToast('Loading Google Ad...');
-      adService.showRewardVideo().then(result => {
-        if (result.earnedReward) {
-          handleRewardedAdReward();
-        } else if (result.message === 'ad_load_failed') {
+
+      adService.showRewardVideo()
+        .then(result => {
+          if (result.earnedReward) {
+            grantRewardedHint();
+          } else if (result.message === 'ad_closed_early') {
+            showToast('Ad closed earlier, hint not granted');
+          } else {
+            showToast('Ads not available');
+          }
+        })
+        .catch(err => {
+          console.warn('Ad session error:', err);
           showToast('Ads not available');
-        } else {
-          showToast('Ad closed early. No hint granted.');
-        }
-      }).catch(() => {
-        showToast('Ads not available');
-      });
+        })
+        .finally(() => {
+          isRewardedSessionActiveRef.current = false;
+        });
       return;
     }
 
     showToast('Ads not available');
-  }, [puzzleWords, progress, applyLetterHintHighlight]);
+  }, [puzzleWords, progress, applyLetterHintHighlight, grantRewardedHint]);
 
   // Handle Rewarded Ad completion
   const handleRewardedAdReward = useCallback(() => {
-    // Reward exactly 1 hint and immediately apply it to gameplay
-    setProgress(p => ({
-      ...p,
-      stats: { ...p.stats, hintsUsed: p.stats.hintsUsed + 1 }
-    }));
-    applyLetterHintHighlight();
-    showToast('Hint Unlocked from Ad & Applied!');
-  }, [applyLetterHintHighlight]);
+    grantRewardedHint();
+  }, [grantRewardedHint]);
 
   // Handle Rewarded Ad cancellation or failure
   const handleRewardedAdCancel = useCallback((reason?: string) => {
     if (reason) {
       showToast(reason);
     } else {
-      showToast('Ad unavailable. Please try again.');
+      showToast('Ad closed earlier, hint not granted');
     }
   }, []);
 
