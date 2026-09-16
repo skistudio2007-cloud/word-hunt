@@ -298,8 +298,21 @@ export default function App() {
     });
 
     // 2. Trigger existing hint application behavior
-    applyLetterHintHighlight();
-    showToast('Hint Unlocked from Ad & Applied!');
+    const applied = applyLetterHintHighlight();
+    if (applied) {
+      showToast('Hint Unlocked from Ad & Applied!');
+    } else {
+      // If unable to apply immediately (e.g. puzzle solved), preserve hint in inventory
+      setProgress(prev => {
+        const updated: UserProgress = {
+          ...prev,
+          purchasedHints: (prev.purchasedHints || 0) + 1
+        };
+        StorageService.saveProgress(updated);
+        return updated;
+      });
+      showToast('Hint Unlocked from Ad & Saved!');
+    }
 
     // 3. Reset lock after safe window to protect against any race conditions
     setTimeout(() => {

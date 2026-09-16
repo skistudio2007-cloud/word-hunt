@@ -176,8 +176,15 @@ class AdMobService {
           // 4. Listen for Ad Dismissed (Ad closed / skipped)
           const dismissSub = await AdMob.addListener(RewardAdPluginEvents.Dismissed, async () => {
             console.log('🚪 AdMob Rewarded Ad Dismissed');
-            // Grace period: allow any in-flight asynchronous reward event or bridge resolution to settle
-            await new Promise(r => setTimeout(r, 250));
+            // If reward was not yet marked earned when dismissed event fires,
+            // wait up to 800ms polling every 50ms to allow asynchronous bridge delivery
+            // of OnUserEarnedRewardListener or showRewardVideoAd promise resolution (addresses TEST 5)
+            if (!rewardEarned) {
+              const startWait = Date.now();
+              while (!rewardEarned && (Date.now() - startWait) < 800) {
+                await new Promise(r => setTimeout(r, 50));
+              }
+            }
 
             if (rewardEarned && !rewardHandled) {
               rewardHandled = true;
