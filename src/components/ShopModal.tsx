@@ -34,13 +34,13 @@ export const ShopModal: React.FC<Props> = ({
       <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-neutral-800 px-4 py-3 flex items-center justify-between">
         <motion.button
           id="btn-shop-back"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.86 }}
           onClick={() => {
             soundManager.playTap();
             onBack();
           }}
-          className="w-10 h-10 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
+          className="btn-bouncy w-10 h-10 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5" />
         </motion.button>
@@ -55,7 +55,7 @@ export const ShopModal: React.FC<Props> = ({
 
       <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-16">
         {purchaseFeedback && (
-          <div className="p-3.5 rounded-2xl bg-neutral-900 border border-white/40 text-white text-xs font-black text-center animate-bounce">
+          <div className="p-3.5 rounded-2xl bg-neutral-900 border border-white/40 text-white text-xs font-black text-center anim-modal-bounce">
             ✓ {purchaseFeedback}
           </div>
         )}
@@ -73,14 +73,14 @@ export const ShopModal: React.FC<Props> = ({
             </div>
           </div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.88 }}
             onClick={() => {
               soundManager.playTap();
               onWatchRewardedAd();
               triggerFeedback('+1 Free Hint added to your backpack!');
             }}
-            className="px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-black transition-colors cursor-pointer"
+            className="btn-bouncy px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-black transition-colors cursor-pointer"
           >
             Claim (+1)
           </motion.button>

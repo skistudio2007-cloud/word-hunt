@@ -43,17 +43,17 @@ const TargetWordItem = React.memo<WordItemProps>(({ word, index, highContrast, o
       initial={{ scale: 0.8, opacity: 0, y: 6 }}
       animate={
         isJustFound
-          ? { scale: [1, 1.2, 0.94, 1.04, 1], opacity: 1, y: 0 }
-          : { scale: 1, opacity: 1, y: 0 }
+          ? { scale: [1, 1.32, 0.88, 1.08, 1], rotate: [0, -4, 3, -1, 0], opacity: 1, y: 0 }
+          : { scale: 1, rotate: 0, opacity: 1, y: 0 }
       }
       transition={
         isJustFound
-          ? { duration: 0.4, ease: 'easeOut' }
+          ? { duration: 0.5, ease: 'easeOut' }
           : { type: 'spring', stiffness: 420, damping: 24, delay: index * 0.03 }
       }
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.96 }}
-      className={`group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs ${
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.88 }}
+      className={`btn-bouncy group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs ${
         word.found
           ? 'font-bold shadow-2xs'
           : highContrast

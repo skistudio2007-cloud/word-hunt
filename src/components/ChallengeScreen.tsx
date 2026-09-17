@@ -106,10 +106,10 @@ export const ChallengeScreen: React.FC<Props> = ({ progress, language = 'en', on
         {/* Play Challenge Button */}
         <motion.button
           id="btn-play-challenge"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.88 }}
           onClick={() => handleStart(activeChallenge)}
-          className={`w-full py-4 rounded-full font-black text-base flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer ${
+          className={`btn-bouncy w-full py-4 rounded-full font-black text-base flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer ${
             isCompleted
               ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'

@@ -54,13 +54,13 @@ const LetterCell = React.memo<LetterCellProps>(
             : isJustFound
             ? 'anim-word-pop z-30 transform-gpu'
             : isSelected
-            ? 'scale-110 -rotate-1 z-20 transform-gpu'
+            ? 'anim-cell-select z-20 transform-gpu'
             : isInitialDrop
             ? 'scale-100 z-10 anim-tile-drop'
             : 'scale-100 z-10'
         } ${
           isSelected
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-2 ring-blue-400'
+            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-300'
             : isHinted
             ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
             : isFound

@@ -121,7 +121,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
           <button
             onClick={toggleSound}
-            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+            className={`btn-bouncy w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
               settings.soundEnabled ? 'bg-blue-600' : 'bg-slate-200'
             }`}
           >
@@ -146,7 +146,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
           <button
             onClick={toggleMusic}
-            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+            className={`btn-bouncy w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
               settings.musicEnabled ? 'bg-blue-600' : 'bg-slate-200'
             }`}
           >
@@ -171,7 +171,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
           <button
             onClick={toggleVibration}
-            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+            className={`btn-bouncy w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
               settings.vibrationEnabled ? 'bg-blue-600' : 'bg-slate-200'
             }`}
           >
@@ -208,7 +208,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
           <button
             onClick={toggleHighContrast}
-            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+            className={`btn-bouncy w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
               settings.highContrast ? 'bg-blue-600' : 'bg-slate-200'
             }`}
           >
@@ -250,7 +250,7 @@ export const SettingsScreen: React.FC<Props> = ({
                   soundManager.playTap();
                   onUpdateSettings({ ...settings, language: languageItem.code });
                 }}
-                className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
+                className={`btn-bouncy p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
                   isSelected
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : 'bg-white border-slate-200/80 text-slate-700 hover:bg-slate-100'
@@ -281,7 +281,7 @@ export const SettingsScreen: React.FC<Props> = ({
               soundManager.playTap();
               setShowPrivacy(true);
             }}
-            className="p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            className="btn-bouncy p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
           >
             <Shield className="w-4 h-4 text-blue-600" />
             <span>{t('privacy')}</span>
@@ -292,7 +292,7 @@ export const SettingsScreen: React.FC<Props> = ({
               soundManager.playTap();
               setShowTerms(true);
             }}
-            className="p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            className="btn-bouncy p-3 rounded-2xl bg-white hover:bg-slate-100/80 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
           >
             <FileText className="w-4 h-4 text-blue-600" />
             <span>{t('terms')}</span>

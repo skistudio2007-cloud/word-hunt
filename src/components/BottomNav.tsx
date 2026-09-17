@@ -41,14 +41,14 @@ export const BottomNav: React.FC<Props> = ({ activeTab, language = 'en', onSelec
             <motion.button
               key={`bottom-tab-${tab.id}`}
               id={`nav-tab-${tab.id.toLowerCase()}`}
-              whileTap={{ scale: 0.92 }}
+              whileTap={{ scale: 0.82 }}
               onClick={() => {
                 if (activeTab !== tab.id) {
                   soundManager.playTap();
                   onSelectTab(tab.id);
                 }
               }}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-colors duration-200 cursor-pointer select-none min-w-[72px] ${
+              className={`btn-bouncy relative flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-colors duration-200 cursor-pointer select-none min-w-[72px] ${
                 isSelected
                   ? 'text-blue-600 font-bold'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50/60'
@@ -61,13 +61,17 @@ export const BottomNav: React.FC<Props> = ({ activeTab, language = 'en', onSelec
                   transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                 />
               )}
-              <div className="relative">
+              <motion.div
+                animate={isSelected ? { scale: [1, 1.3, 0.88, 1.1, 1] } : { scale: 1 }}
+                transition={{ duration: 0.42, ease: 'easeOut' }}
+                className="relative"
+              >
                 <Icon
                   className={`w-5 h-5 transition-transform duration-200 ${
-                    isSelected ? 'scale-110 stroke-[2.4]' : 'stroke-[1.8]'
+                    isSelected ? 'stroke-[2.4]' : 'stroke-[1.8]'
                   }`}
                 />
-              </div>
+              </motion.div>
               <span
                 className={`text-[11px] mt-1 tracking-tight transition-all duration-200 ${
                   isSelected ? 'font-bold text-blue-600' : 'font-medium text-slate-500'

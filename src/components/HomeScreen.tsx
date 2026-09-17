@@ -34,11 +34,13 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
 
       {/* 1. Upper-Center Hero Section: App Icon + Title + Theme Level Badge */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-xs space-y-6 my-auto">
-        {/* Floating App Icon with Calm Ambient Glow */}
+        {/* Floating App Icon with Bouncy Float & Tactile Tap */}
         <motion.div 
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative flex flex-col items-center"
+          animate={{ y: [0, -10, 0], rotate: [0, -1.5, 1.5, 0] }}
+          transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
+          whileHover={{ scale: 1.05, rotate: 1 }}
+          whileTap={{ scale: 0.88, rotate: -3 }}
+          className="relative flex flex-col items-center cursor-pointer select-none"
         >
           <div className="relative">
             <img
@@ -52,17 +54,28 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
         </motion.div>
 
         {/* Word Hunt Typography */}
-        <div className="text-center space-y-1">
+        <motion.div 
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+          className="text-center space-y-1"
+        >
           <h1 className="text-3xl sm:text-4xl font-black tracking-wider text-slate-900 leading-none">
             WORD HUNT
           </h1>
           <p className="text-xs sm:text-sm font-bold tracking-widest text-slate-500 uppercase">
             Word Search Adventure
           </p>
-        </div>
+        </motion.div>
 
         {/* Current Theme World & Level Badge */}
-        <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 backdrop-blur-xs border border-slate-200/90 shadow-xs">
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 20, delay: 0.1 }}
+          whileTap={{ scale: 0.92 }}
+          className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 backdrop-blur-xs border border-slate-200/90 shadow-xs cursor-pointer"
+        >
           <span className="text-base">{world.bgDecorations[0] || '🌿'}</span>
           <span className="text-xs font-black text-slate-800 tracking-wider uppercase">
             {world.name}
@@ -71,21 +84,21 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
           <span className="text-xs font-extrabold text-blue-600 tracking-wide">
             {levelText} {currentLevel}
           </span>
-        </div>
+        </motion.div>
       </div>
 
       {/* 2. Lower Action Section: Play Button placed at bottom */}
       <div className="w-full max-w-xs flex flex-col items-center gap-3 relative z-10 mt-auto pt-4 pb-2">
         <motion.button
           id="btn-main-play"
-          animate={{ scale: [1, 1.025, 1] }}
+          animate={{ scale: [1, 1.05, 0.97, 1.03, 1] }}
           transition={{ 
             scale: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
           }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.94 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.88 }}
           onClick={handlePlayClick}
-          className="w-full py-5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-black text-xl shadow-xl shadow-blue-500/35 flex items-center justify-center gap-3 cursor-pointer border border-blue-400/50 relative overflow-hidden select-none transition-shadow"
+          className="btn-bouncy w-full py-5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-black text-xl shadow-xl shadow-blue-500/35 flex items-center justify-center gap-3 cursor-pointer border border-blue-400/50 relative overflow-hidden select-none transition-shadow"
         >
           <Play className="w-6 h-6 fill-white text-white translate-x-0.5 drop-shadow-xs" />
           <span className="tracking-wide text-xl uppercase font-black">{playText}</span>
