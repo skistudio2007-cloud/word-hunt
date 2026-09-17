@@ -38,25 +38,26 @@ export const LevelCompleteModal: React.FC<Props> = React.memo(({
   const levelCompleteText = getTranslation(language, 'levelComplete') || 'LEVEL COMPLETED!';
   const nextText = getTranslation(language, 'nextLevel') || 'NEXT LEVEL';
 
-  // 18 lightweight party popper confetti pieces that shoot outward on GPU compositor
+  // 24 premium party popper confetti pieces with multi-shape particles on GPU
   const confetti = useMemo<ConfettiPiece[]>(() => {
     const list: ConfettiPiece[] = [];
-    const count = 18;
+    const count = 24;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * 2 * Math.PI;
-      const distance = 130 + (i % 5) * 35;
-      const isRibbon = i % 2 === 0;
+      const distance = 140 + (i % 6) * 32;
+      const isRibbon = i % 3 === 0;
+      const isDiamond = i % 3 === 1;
       list.push({
         id: i,
         tx: Math.round(Math.cos(angle) * distance),
-        ty: Math.round(Math.sin(angle) * (distance * 0.8) + 40),
-        tr: (i * 75 + 160) % 720,
+        ty: Math.round(Math.sin(angle) * (distance * 0.85) + 30),
+        tr: (i * 85 + 180) % 720,
         color: CELEBRATION_COLORS[i % CELEBRATION_COLORS.length],
-        delay: 0.05 + (i % 6) * 0.04,
-        duration: 1.5 + (i % 4) * 0.25,
-        width: isRibbon ? 6 : 9,
-        height: isRibbon ? 15 : 9,
-        borderRadius: isRibbon ? '2px' : '9999px'
+        delay: 0.04 + (i % 6) * 0.035,
+        duration: 1.6 + (i % 4) * 0.22,
+        width: isRibbon ? 6 : isDiamond ? 10 : 8,
+        height: isRibbon ? 16 : isDiamond ? 10 : 8,
+        borderRadius: isRibbon ? '2px' : isDiamond ? '2px' : '9999px'
       });
     }
     return list;
@@ -134,29 +135,29 @@ export const LevelCompleteModal: React.FC<Props> = React.memo(({
       {/* 3. Premium Victory Card with 3D Trophy, Stars & Next Button */}
       <motion.div
         id="level-complete-card"
-        initial={{ scale: 0.85, opacity: 0, y: 20 }}
+        initial={{ scale: 0.65, opacity: 0, y: 35 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 15 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 380 }}
+        exit={{ scale: 0.85, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 420 }}
         className="w-full max-w-xs bg-white rounded-3xl p-6 sm:p-7 shadow-2xl text-slate-900 text-center relative z-10 flex flex-col items-center space-y-4 border border-amber-200/80 overflow-visible transform-gpu"
       >
         {/* Floating Trophy & Sunburst Badge */}
         <div className="relative -mt-12">
           {/* Rotating Sunburst Rays on GPU */}
           <div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full opacity-30 anim-sunburst pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full opacity-35 anim-sunburst pointer-events-none"
             style={{
-              background: 'conic-gradient(from 0deg, transparent 0deg, rgba(245,158,11,0.5) 20deg, transparent 40deg, rgba(245,158,11,0.5) 60deg, transparent 80deg, rgba(245,158,11,0.5) 100deg, transparent 120deg, rgba(245,158,11,0.5) 140deg, transparent 160deg, rgba(245,158,11,0.5) 180deg, transparent 200deg, rgba(245,158,11,0.5) 220deg, transparent 240deg, rgba(245,158,11,0.5) 260deg, transparent 280deg, rgba(245,158,11,0.5) 300deg, transparent 320deg, rgba(245,158,11,0.5) 340deg, transparent 360deg)'
+              background: 'conic-gradient(from 0deg, transparent 0deg, rgba(245,158,11,0.55) 20deg, transparent 40deg, rgba(245,158,11,0.55) 60deg, transparent 80deg, rgba(245,158,11,0.55) 100deg, transparent 120deg, rgba(245,158,11,0.55) 140deg, transparent 160deg, rgba(245,158,11,0.55) 180deg, transparent 200deg, rgba(245,158,11,0.55) 220deg, transparent 240deg, rgba(245,158,11,0.55) 260deg, transparent 280deg, rgba(245,158,11,0.55) 300deg, transparent 320deg, rgba(245,158,11,0.55) 340deg, transparent 360deg)'
             }}
           />
 
           {/* Glowing Aura Ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 blur-md opacity-60 scale-125 anim-bg-pulse" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 blur-md opacity-70 scale-125 anim-bg-pulse" />
           
           {/* Trophy Pop Container */}
           <div
             style={{
-              animation: 'trophyJuicyPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
+              animation: 'trophyJuicyPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
               animationDelay: '0.08s'
             }}
             className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 text-white flex items-center justify-center border-4 border-white shadow-xl shadow-amber-500/40 transform-gpu"
@@ -245,13 +246,13 @@ export const LevelCompleteModal: React.FC<Props> = React.memo(({
         >
           <motion.button
             id="btn-next-level"
-            whileHover={{ scale: 1.025 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.88 }}
             onClick={() => {
               soundManager.playTap();
               onNextLevel();
             }}
-            className="w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/35 flex items-center justify-center gap-2.5 cursor-pointer transition-all border-b-4 border-blue-800 active:border-b-0 select-none"
+            className="btn-bouncy w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/35 flex items-center justify-center gap-2.5 cursor-pointer transition-all border-b-4 border-blue-800 active:border-b-0 select-none"
           >
             <span className="tracking-wide uppercase">{nextText}</span>
             <ArrowRight className="w-5 h-5 stroke-[2.5]" />

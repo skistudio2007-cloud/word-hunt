@@ -24,7 +24,6 @@ interface LetterCellProps {
   isHinted: boolean;
   isJustFound: boolean;
   isCompleting: boolean;
-  isInitialDrop: boolean;
 }
 
 const LetterCell = React.memo<LetterCellProps>(
@@ -40,9 +39,9 @@ const LetterCell = React.memo<LetterCellProps>(
     isHinted,
     isJustFound,
     isCompleting,
-    isInitialDrop,
   }) => {
-    const dropDelay = `${(rowIndex * gridSize + colIndex) * 0.022}s`;
+    // Ultra-smooth diagonal wave drop delay (max ~0.33s for 8x8)
+    const dropDelay = `${(rowIndex + colIndex) * 0.024}s`;
     const victoryDelay = `${(rowIndex + colIndex) * 0.045}s`;
 
     return (
@@ -55,9 +54,7 @@ const LetterCell = React.memo<LetterCellProps>(
             ? 'anim-word-pop z-30 transform-gpu'
             : isSelected
             ? 'anim-cell-select z-20 transform-gpu'
-            : isInitialDrop
-            ? 'scale-100 z-10 anim-tile-drop'
-            : 'scale-100 z-10'
+            : 'scale-100 z-10 anim-tile-drop'
         } ${
           isSelected
             ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-300'
@@ -70,7 +67,7 @@ const LetterCell = React.memo<LetterCellProps>(
         style={{
           touchAction: 'none',
           contain: 'layout paint',
-          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : isInitialDrop ? dropDelay : '0s',
+          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay,
           ...(!isSelected && isFound && primaryFoundColor
             ? {
                 backgroundColor: `${primaryFoundColor}20`,
@@ -119,7 +116,6 @@ const LetterCell = React.memo<LetterCellProps>(
       prev.isHinted === next.isHinted &&
       prev.isJustFound === next.isJustFound &&
       prev.isCompleting === next.isCompleting &&
-      prev.isInitialDrop === next.isInitialDrop &&
       prev.gridSize === next.gridSize
     );
   }
@@ -142,17 +138,7 @@ export const LetterGrid: React.FC<Props> = ({
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
   const [isWrongSelection, setIsWrongSelection] = useState(false);
   const [justFoundCells, setJustFoundCells] = useState<Coordinate[] | null>(null);
-  const [isInitialDrop, setIsInitialDrop] = useState(true);
   const prevFoundCountRef = useRef(words.filter(w => w.found).length);
-
-  // Initial staggered drop animation only runs for the first 500ms
-  React.useEffect(() => {
-    setIsInitialDrop(true);
-    const timer = setTimeout(() => {
-      setIsInitialDrop(false);
-    }, 550);
-    return () => clearTimeout(timer);
-  }, [grid]);
 
   // Trigger subtle pop when a word is marked found
   React.useEffect(() => {
@@ -546,7 +532,6 @@ export const LetterGrid: React.FC<Props> = ({
                   isHinted={isHinted}
                   isJustFound={isJustFound}
                   isCompleting={isCompleting}
-                  isInitialDrop={isInitialDrop}
                 />
               );
             })

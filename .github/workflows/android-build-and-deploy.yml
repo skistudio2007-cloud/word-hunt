@@ -89,27 +89,25 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.20
+      - name: Create or Update GitHub Release v1.0.21
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.20
-          name: "Word Hunt v1.0.20 - Universal Juicy Bouncy Animations"
+          tag_name: v1.0.21
+          name: "Word Hunt v1.0.21 - Zero-Lag Level Drop & Professional Pop Celebration"
           body: |
-            ### 🎮 Word Hunt v1.0.20 - Universal Juicy Bouncy Animations
+            ### 🎮 Word Hunt v1.0.21 - Zero-Lag Level Drop & Professional Pop Celebration
 
-            - 🎈 **Universal Juicy Bouncy Animations**:
-              - Tactile spring bounce on all buttons, tabs, modal controls, and actions (`.btn-bouncy`).
-              - Play button with rhythmic bouncy heartbeat pulse and spring squish on tap.
-              - Hero app icon with smooth bobbing float, tilt wobble, and spring tap reaction.
-              - Letter tiles on the board feature energetic bouncy spring pop (`anim-cell-select`) during swipe drags with zero latency.
-              - Target word pills pop with celebratory bouncy overshoot and tilt when found.
-              - Bottom navigation tabs with bouncy icon switch animation.
-              - Spring-bounce entrances for Pause modal, shop dialogs, and notifications.
-            - ⚡ **Zero-Lag 60/120 FPS Performance**:
-              - All animations composited strictly on GPU hardware layers using pure CSS3 3D transforms.
-              - No changes to game rules, dictionary, levels, ad schedules, or audio volume.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 20 and `versionName` to 1.0.20.
+            - 🚀 **Zero-Lag Level Start Drop**:
+              - Eliminated the 550ms React state timer (`isInitialDrop`) that was triggering a heavy 64-component re-render midway through tile drop.
+              - Tiles now cascade in a fluid diagonal wave (`(rowIndex + colIndex) * 0.024s`) strictly on the GPU compositor with `both` fill mode.
+              - 100% buttery-smooth 60/120 FPS when any level or grid starts.
+            - 🎉 **Professional Bouncy Pop Celebration**:
+              - 24 multi-shape party popper confetti pieces (fluttering ribbons, diamonds, glowing dots) bursting outward on GPU threads.
+              - Juicy bouncy card entrance (`scale: [0.65 -> 1.12 -> 0.95 -> 1]`) with dual celestial sunburst rays and golden radiant glow.
+              - Ascending 3-star pop celebration with golden ping wave rings and melodic audio chimes.
+              - Bouncy NEXT LEVEL action button with tactile spring squash on tap.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 21 and `versionName` to 1.0.21.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab
