@@ -63,12 +63,16 @@ export class StorageService {
     return { ...DEFAULT_SETTINGS };
   }
 
+  private static settingsTimeout: any = null;
   public static saveSettings(settings: UserSettings): void {
-    try {
-      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-    } catch (e) {
-      console.warn('Failed to save settings', e);
-    }
+    if (this.settingsTimeout) clearTimeout(this.settingsTimeout);
+    this.settingsTimeout = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+      } catch (e) {
+        console.warn('Failed to save settings', e);
+      }
+    }, 100);
   }
 
   public static loadProgress(): UserProgress {
@@ -94,12 +98,16 @@ export class StorageService {
     return { ...DEFAULT_PROGRESS };
   }
 
+  private static saveTimeout: any = null;
   public static saveProgress(progress: UserProgress): void {
-    try {
-      const json = JSON.stringify(progress);
-      localStorage.setItem(STORAGE_KEY_PROGRESS, json);
-    } catch (e) {
-      console.warn('Failed to persist progress', e);
-    }
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => {
+      try {
+        const json = JSON.stringify(progress);
+        localStorage.setItem(STORAGE_KEY_PROGRESS, json);
+      } catch (e) {
+        console.warn('Failed to persist progress', e);
+      }
+    }, 100);
   }
 }

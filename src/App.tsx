@@ -516,7 +516,7 @@ export default function App() {
         {/* 2. Active Level / Challenge Gameplay Screen (Stays visible during LEVEL_COMPLETE under the modal) */}
         {(gameState === 'PLAYING' || gameState === 'CHALLENGE_PLAYING' || gameState === 'LEVEL_COMPLETE') && currentPuzzle && (
           <div
-            className="w-full min-h-screen bg-white flex flex-col justify-between p-2 pb-6 relative overflow-hidden"
+            className={`w-full min-h-screen bg-white flex flex-col justify-between p-2 pb-6 relative overflow-hidden transition-opacity duration-300 ${gameState === 'LEVEL_COMPLETE' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
           >
             {/* Theme-based Animated Dynamic Background */}
             <AnimatedThemeBackground 
