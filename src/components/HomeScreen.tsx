@@ -44,10 +44,10 @@ export const HomeScreen: React.FC<Props> = ({ currentLevel, language = 'en', onP
             <img
               src="/app-icon.png"
               alt="Word Hunt Icon"
-              className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl shadow-2xl shadow-blue-500/25 border-2 border-white/95 object-cover"
+              className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl shadow-2xl shadow-emerald-600/25 object-contain drop-shadow-xl"
             />
             {/* Soft ambient aura */}
-            <div className="absolute -inset-2 bg-gradient-to-tr from-blue-500/20 via-indigo-500/20 to-teal-400/20 rounded-3xl blur-xl -z-10" />
+            <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-500/25 via-blue-500/20 to-amber-400/20 rounded-3xl blur-xl -z-10" />
           </div>
         </motion.div>
 

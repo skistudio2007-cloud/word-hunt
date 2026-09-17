@@ -17,7 +17,7 @@ interface WordItemProps {
   onSelect: (word: PlacedWord) => void;
 }
 
-const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, onSelect }) => {
+const TargetWordItem = React.memo<WordItemProps>(({ word, index, highContrast, onSelect }) => {
   const wasFoundRef = React.useRef(word.found);
   const [isJustFound, setIsJustFound] = React.useState(false);
 
@@ -88,7 +88,8 @@ const TargetWordItem: React.FC<WordItemProps> = ({ word, index, highContrast, on
       )}
     </motion.button>
   );
-};
+});
+TargetWordItem.displayName = 'TargetWordItem';
 
 export const WordList: React.FC<Props> = React.memo(
   ({ words, onSelectWordForInfo, highContrast = false }) => {

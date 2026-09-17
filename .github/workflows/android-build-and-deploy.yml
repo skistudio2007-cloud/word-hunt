@@ -89,20 +89,24 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk release-assets/WordHunt-debug.apk
           cp android/app/build/outputs/bundle/debug/*.aab release-assets/WordHunt-debug.aab
 
-      - name: Create or Update GitHub Release v1.0.17
+      - name: Create or Update GitHub Release v1.0.18
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.17
-          name: "Word Hunt v1.0.17 - Remove In-App Purchases Completely"
+          tag_name: v1.0.18
+          name: "Word Hunt v1.0.18 - New App Icon & Ultra-Smooth Performance Polish"
           body: |
-            ### 🎮 Word Hunt v1.0.17 - Remove In-App Purchases Completely
+            ### 🎮 Word Hunt v1.0.18 - New App Icon & Ultra-Smooth Performance Polish
 
-            - 🛡️ **Completely Removed In-App Purchases (IAP)**:
-              - Removed Amazon Appstore SDK and native purchasing plugins/receivers.
-              - Removed billing services, providers, and purchase listeners.
-              - Removed all purchase/subscription options and buttons from Settings and Shop.
-            - 📱 **Clean Version Bump**: Updated `versionCode` to 17 and `versionName` to 1.0.17.
+            - 🎨 **New Custom App Icon**:
+              - High-resolution vibrant Word Hunter iconography with transparent rounded squircle background.
+              - Updated across all Android mipmap densities (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi), adaptive icon foregrounds, web assets, and Amazon store icons.
+              - Enhanced Home Screen hero with matching ambient aura and drop shadow.
+            - ⚡ **Ultra-Smooth 60/120 FPS Polish & Bug Fixes**:
+              - Memoized `TargetWordItem` components to eliminate unnecessary re-renders during gameplay.
+              - Added Web Audio API node cleanup and `visibilitychange` lifecycle management (auto-suspends when minimized/in background to save battery).
+              - Zero-latency letter grid drag tracking with touch-action isolation and hardware acceleration.
+            - 📱 **Clean Version Bump**: Updated `versionCode` to 18 and `versionName` to 1.0.18.
           files: |
             release-assets/WordHunt-debug.apk
             release-assets/WordHunt-debug.aab
