@@ -34,6 +34,7 @@ export const LevelCompleteModal: React.FC<Props> = React.memo(({
   onNextLevel
 }) => {
   const [activeStars, setActiveStars] = useState(0);
+  const [isNextClicked, setIsNextClicked] = useState(false);
 
   const levelCompleteText = getTranslation(language, 'levelComplete') || 'LEVEL COMPLETED!';
   const nextText = getTranslation(language, 'nextLevel') || 'NEXT LEVEL';
@@ -246,13 +247,18 @@ export const LevelCompleteModal: React.FC<Props> = React.memo(({
         >
           <motion.button
             id="btn-next-level"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.88 }}
+            whileHover={!isNextClicked ? { scale: 1.04 } : undefined}
+            whileTap={!isNextClicked ? { scale: 0.88 } : undefined}
+            disabled={isNextClicked}
             onClick={() => {
+              if (isNextClicked) return;
+              setIsNextClicked(true);
               soundManager.playTap();
               onNextLevel();
             }}
-            className="btn-bouncy w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/35 flex items-center justify-center gap-2.5 cursor-pointer transition-all border-b-4 border-blue-800 active:border-b-0 select-none"
+            className={`btn-bouncy w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/35 flex items-center justify-center gap-2.5 transition-all border-b-4 border-blue-800 active:border-b-0 select-none ${
+              isNextClicked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+            }`}
           >
             <span className="tracking-wide uppercase">{nextText}</span>
             <ArrowRight className="w-5 h-5 stroke-[2.5]" />

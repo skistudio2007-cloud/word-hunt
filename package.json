@@ -10,7 +10,9 @@
     "open:android": "cap open android",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "generate:levels": "tsx scripts/generate_10k_levels.ts",
+    "verify:levels": "tsx scripts/verify_levels.ts"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

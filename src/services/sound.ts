@@ -82,6 +82,19 @@ class SoundEngine {
     }
   }
 
+  private safeStopAndDisconnect(osc: OscillatorNode, ...nodes: (AudioNode | null | undefined)[]) {
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+      } catch {}
+      for (const node of nodes) {
+        try {
+          node?.disconnect();
+        } catch {}
+      }
+    };
+  }
+
   public playTap() {
     if (!this.soundEnabled) return;
     this.initContext();
@@ -102,6 +115,7 @@ class SoundEngine {
       osc.connect(gain);
       gain.connect(this.soundGainNode);
 
+      this.safeStopAndDisconnect(osc, gain);
       osc.start(now);
       osc.stop(now + 0.05);
     } catch {
@@ -136,6 +150,7 @@ class SoundEngine {
       filter.connect(gain);
       gain.connect(this.soundGainNode);
 
+      this.safeStopAndDisconnect(osc, filter, gain);
       osc.start(now);
       osc.stop(now + 0.09);
     } catch {}
@@ -165,6 +180,7 @@ class SoundEngine {
         osc.connect(gain);
         gain.connect(this.soundGainNode!);
 
+        this.safeStopAndDisconnect(osc, gain);
         osc.start(start);
         osc.stop(start + 0.45);
       });
@@ -193,6 +209,7 @@ class SoundEngine {
       osc.connect(gain);
       gain.connect(this.soundGainNode);
 
+      this.safeStopAndDisconnect(osc, gain);
       osc.start(now);
       osc.stop(now + 0.12);
 
@@ -223,6 +240,7 @@ class SoundEngine {
       osc.connect(gain);
       gain.connect(this.soundGainNode);
 
+      this.safeStopAndDisconnect(osc, gain);
       osc.start(now);
       osc.stop(now + 0.18);
 
@@ -261,6 +279,7 @@ class SoundEngine {
         osc.connect(gain);
         gain.connect(this.soundGainNode!);
 
+        this.safeStopAndDisconnect(osc, gain);
         osc.start(start);
         osc.stop(start + 0.5);
       });
@@ -287,6 +306,7 @@ class SoundEngine {
 
         osc.connect(gain);
         gain.connect(this.soundGainNode);
+        this.safeStopAndDisconnect(osc, gain);
         osc.start(start);
         osc.stop(start + 0.18);
       }
@@ -328,6 +348,7 @@ class SoundEngine {
         bassGain.gain.linearRampToValueAtTime(0.001, now + STEP_DURATION);
         bassOsc.connect(bassGain);
         bassGain.connect(this.musicGainNode);
+        this.safeStopAndDisconnect(bassOsc, bassGain);
         bassOsc.start(now);
         bassOsc.stop(now + STEP_DURATION);
 
@@ -348,6 +369,7 @@ class SoundEngine {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, now);
           osc.connect(padFilter);
+          this.safeStopAndDisconnect(osc, padFilter, padGain);
           osc.start(now);
           osc.stop(now + STEP_DURATION);
         });
@@ -365,6 +387,7 @@ class SoundEngine {
 
         chimeOsc.connect(chimeGain);
         chimeGain.connect(this.musicGainNode);
+        this.safeStopAndDisconnect(chimeOsc, chimeGain);
         chimeOsc.start(chimeTime);
         chimeOsc.stop(chimeTime + 1.7);
       } catch {}

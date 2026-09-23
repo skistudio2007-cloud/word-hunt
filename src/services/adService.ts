@@ -108,16 +108,11 @@ class AdMobService {
       // Per-attempt state & duplicate protection guards
       let earnedReward = false;
       let isSettled = false;
-      let dismissTimeout: ReturnType<typeof setTimeout> | null = null;
       let safetyTimeout: ReturnType<typeof setTimeout> | null = null;
       const listeners: PluginListenerHandle[] = [];
 
       // Safe cleanup function for all listeners and state
       const cleanup = async () => {
-        if (dismissTimeout) {
-          clearTimeout(dismissTimeout);
-          dismissTimeout = null;
-        }
         if (safetyTimeout) {
           clearTimeout(safetyTimeout);
           safetyTimeout = null;
@@ -175,20 +170,18 @@ class AdMobService {
         listeners.push(rewardListener);
 
         // Event B: Ad Dismissed / Closed by user
+        // Synchronously and definitively evaluate earnedReward - no arbitrary timeouts
         const dismissListener = await AdMob.addListener(
           RewardAdPluginEvents.Dismissed,
           () => {
             console.log('ℹ️ AdMob Rewarded Ad dismissed. earnedReward status:', earnedReward);
-            // Brief tick (100ms) to allow any queued Rewarded event to process
-            dismissTimeout = setTimeout(() => {
-              if (earnedReward) {
-                // User completed ad and received real AdMob reward
-                settle({ success: true, earnedReward: true });
-              } else {
-                // User closed early or no reward event was received
-                settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
-              }
-            }, 100);
+            if (earnedReward) {
+              // User completed ad and received real AdMob reward
+              settle({ success: true, earnedReward: true });
+            } else {
+              // User closed early or no reward event was received
+              settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
+            }
           }
         );
         listeners.push(dismissListener);
@@ -246,31 +239,32 @@ class AdMobService {
       return { success: false, message: 'web_platform' };
     }
 
-    await this.initialize();
+    if (this.isAdPlaying) {
+      console.warn('⚠️ Interstitial Ad is already in progress');
+      return { success: false, message: 'ad_in_progress' };
+    }
+
     this.isAdPlaying = true;
+    await this.initialize();
 
     try {
       if (!this.isInterstitialReady) {
         const ready = await this.preloadInterstitial();
         if (!ready) {
-          this.isAdPlaying = false;
           return { success: false, message: 'ad_load_failed' };
         }
       }
 
       this.isInterstitialReady = false;
       await AdMob.showInterstitial();
-      this.isAdPlaying = false;
-
-      // Preload next ad in background
-      this.preloadInterstitial().catch(() => {});
-
       return { success: true };
     } catch (error) {
-      this.isAdPlaying = false;
       console.error('AdMob showInterstitial error:', error);
-      this.preloadInterstitial().catch(() => {});
       return { success: false, message: String(error) };
+    } finally {
+      this.isAdPlaying = false;
+      // Preload next ad in background
+      this.preloadInterstitial().catch(() => {});
     }
   }
 

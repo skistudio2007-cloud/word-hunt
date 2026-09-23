@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Capacitor } from '@capacitor/core';
 import { 
@@ -11,7 +11,8 @@ import {
   ChallengeInfo,
   LanguageCode 
 } from './types';
-import { generatePuzzle, generateDailyPuzzle, generateChallengePuzzle } from './services/puzzleGenerator';
+import { generateDailyPuzzle, generateChallengePuzzle } from './services/puzzleGenerator';
+import { levelService } from './services/levelService';
 import { StorageService, DEFAULT_PROGRESS, DEFAULT_SETTINGS } from './services/storage';
 import { soundManager } from './services/sound';
 import { adService } from './services/adService';
@@ -79,6 +80,7 @@ export default function App() {
   const [hintsUsedInLevel, setHintsUsedInLevel] = useState<number>(0);
   const [activeChallenge, setActiveChallenge] = useState<ChallengeInfo | null>(null);
   const [isLevelCompleting, setIsLevelCompleting] = useState<boolean>(false);
+  const isLevelTransitioningRef = useRef(false);
 
   // Modals & Drawers
   const [isRewardedAdOpen, setIsRewardedAdOpen] = useState(false);
@@ -126,15 +128,21 @@ export default function App() {
     }
   }, []);
 
-  // Load standard level puzzle
-  const startLevel = useCallback((levelNum: number, lang?: LanguageCode) => {
+  // Preload level chunk in background
+  useEffect(() => {
+    levelService.preloadLevel(progress.currentLevel);
+  }, [progress.currentLevel]);
+
+  // Load standard level puzzle from pre-generated database
+  const startLevel = useCallback(async (levelNum: number, lang?: LanguageCode) => {
+    isLevelTransitioningRef.current = false;
     setIsLevelCompleting(false);
     setHintStartCell(null);
     setHintsUsedInLevel(0);
     setLevelStartTime(Date.now());
     setActiveChallenge(null);
 
-    const puzzle = generatePuzzle(levelNum, undefined, lang || settings.language);
+    const puzzle = await levelService.getLevel(levelNum, lang || settings.language);
     setCurrentPuzzle(puzzle);
     setPuzzleWords(puzzle.words.map(w => ({ ...w, found: false })));
     setGameState('PLAYING');
@@ -345,7 +353,13 @@ export default function App() {
   }, []);
 
   const handleNextLevel = () => {
+    if (isLevelTransitioningRef.current || adService.isPlaying()) {
+      return;
+    }
+    isLevelTransitioningRef.current = true;
+
     if (activeChallenge) {
+      isLevelTransitioningRef.current = false;
       setGameState('MAIN_MENU');
       setActiveTab('CHALLENGE');
       return;

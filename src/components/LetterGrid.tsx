@@ -139,6 +139,16 @@ export const LetterGrid: React.FC<Props> = ({
   const [isWrongSelection, setIsWrongSelection] = useState(false);
   const [justFoundCells, setJustFoundCells] = useState<Coordinate[] | null>(null);
   const prevFoundCountRef = useRef(words.filter(w => w.found).length);
+  const justFoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrongSelectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up all pending animation timers on unmount
+  React.useEffect(() => {
+    return () => {
+      if (justFoundTimeoutRef.current) clearTimeout(justFoundTimeoutRef.current);
+      if (wrongSelectionTimeoutRef.current) clearTimeout(wrongSelectionTimeoutRef.current);
+    };
+  }, []);
 
   // Trigger subtle pop when a word is marked found
   React.useEffect(() => {
@@ -147,7 +157,8 @@ export const LetterGrid: React.FC<Props> = ({
       const latestFound = currentFoundWords[currentFoundWords.length - 1];
       if (latestFound) {
         setJustFoundCells(latestFound.cells);
-        setTimeout(() => setJustFoundCells(null), 500);
+        if (justFoundTimeoutRef.current) clearTimeout(justFoundTimeoutRef.current);
+        justFoundTimeoutRef.current = setTimeout(() => setJustFoundCells(null), 500);
       }
       prevFoundCountRef.current = currentFoundWords.length;
     }
@@ -347,13 +358,15 @@ export const LetterGrid: React.FC<Props> = ({
     if (matched) {
       soundManager.playWordSuccess();
       setJustFoundCells(matched.cells);
-      setTimeout(() => setJustFoundCells(null), 500);
+      if (justFoundTimeoutRef.current) clearTimeout(justFoundTimeoutRef.current);
+      justFoundTimeoutRef.current = setTimeout(() => setJustFoundCells(null), 500);
       onWordFound(matched);
     } else {
       if (currentSelection.length >= 2) {
         soundManager.playWordFail();
         setIsWrongSelection(true);
-        setTimeout(() => setIsWrongSelection(false), 250);
+        if (wrongSelectionTimeoutRef.current) clearTimeout(wrongSelectionTimeoutRef.current);
+        wrongSelectionTimeoutRef.current = setTimeout(() => setIsWrongSelection(false), 250);
       }
     }
 
