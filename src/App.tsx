@@ -301,12 +301,17 @@ export default function App() {
 
     // 2. WATCH GOOGLE REWARDED AD FOR HINT
     if (Capacitor.isNativePlatform()) {
+      if (adService.isPlaying()) {
+        return;
+      }
       showToast('Loading Google Ad...');
       adService.showRewardVideo().then(result => {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
           showToast('Ads not available');
+        } else if (result.message === 'ad_in_progress') {
+          // Already in progress, do nothing
         } else {
           showToast('Ad closed early. No hint granted.');
         }

@@ -4,8 +4,14 @@
  * Features background ad preloading for zero-latency playback.
  */
 
-import { Capacitor } from '@capacitor/core';
-import { AdMob, AdMobInitializationOptions } from '@capacitor-community/admob';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { 
+  AdMob, 
+  AdMobInitializationOptions, 
+  RewardAdPluginEvents, 
+  AdMobRewardItem,
+  AdMobError 
+} from '@capacitor-community/admob';
 
 export interface AdConfig {
   appId: string;
@@ -81,40 +87,124 @@ class AdMobService {
 
   /**
    * Shows a real Google AdMob Rewarded Video.
-   * Resolves when the user completes watching and earns the reward.
+   * Resolves ONLY when the user finishes viewing and the real AdMob reward callback is received.
+   * Never gives a reward on early close, dismiss without reward, load failure, or show failure.
    */
   public async showRewardVideo(): Promise<{ success: boolean; earnedReward: boolean; message?: string }> {
     if (!Capacitor.isNativePlatform()) {
       return { success: false, earnedReward: false, message: 'web_platform' };
     }
 
+    // Prevent concurrent ad requests
+    if (this.isAdPlaying) {
+      console.warn('⚠️ Rewarded Ad is already in progress');
+      return { success: false, earnedReward: false, message: 'ad_in_progress' };
+    }
+
     await this.initialize();
     this.isAdPlaying = true;
 
-    try {
-      if (!this.isRewardedReady) {
-        const ready = await this.preloadRewardVideo();
-        if (!ready) {
-          this.isAdPlaying = false;
-          return { success: false, earnedReward: false, message: 'ad_load_failed' };
+    return new Promise<{ success: boolean; earnedReward: boolean; message?: string }>(async (resolve) => {
+      // Per-attempt state & duplicate protection guards
+      let earnedReward = false;
+      let isSettled = false;
+      const listeners: PluginListenerHandle[] = [];
+
+      // Safe cleanup function for all listeners and state
+      const cleanup = async () => {
+        this.isAdPlaying = false;
+        this.isRewardedReady = false;
+
+        for (const listener of listeners) {
+          try {
+            await listener.remove();
+          } catch (err) {
+            console.warn('⚠️ Error removing ad listener:', err);
+          }
         }
+        listeners.length = 0;
+
+        // Preload next ad in background for subsequent requests
+        this.preloadRewardVideo().catch(() => {});
+      };
+
+      // Single-execution resolver: guarantees exact 1 resolution per attempt
+      const settle = async (result: { success: boolean; earnedReward: boolean; message?: string }) => {
+        if (isSettled) return;
+        isSettled = true;
+        await cleanup();
+        resolve(result);
+      };
+
+      try {
+        // Step 1: Ensure ad is loaded/ready
+        if (!this.isRewardedReady) {
+          const ready = await this.preloadRewardVideo();
+          if (!ready) {
+            await settle({ success: false, earnedReward: false, message: 'ad_load_failed' });
+            return;
+          }
+        }
+
+        // Step 2: Register AdMob event listeners BEFORE showing the ad
+
+        // Event A: Real Reward Earned from AdMob SDK
+        const rewardListener = await AdMob.addListener(
+          RewardAdPluginEvents.Rewarded,
+          (rewardItem: AdMobRewardItem) => {
+            console.log('🎉 AdMob Rewarded event received from Google SDK:', rewardItem);
+            earnedReward = true;
+          }
+        );
+        listeners.push(rewardListener);
+
+        // Event B: Ad Dismissed / Closed by user
+        const dismissListener = await AdMob.addListener(
+          RewardAdPluginEvents.Dismissed,
+          () => {
+            console.log('ℹ️ AdMob Rewarded Ad dismissed. earnedReward status:', earnedReward);
+            // Brief tick (60ms) to allow any queued Rewarded event to process
+            setTimeout(() => {
+              if (earnedReward) {
+                // User completed ad and received real AdMob reward
+                settle({ success: true, earnedReward: true });
+              } else {
+                // User closed early or no reward event was received
+                settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
+              }
+            }, 60);
+          }
+        );
+        listeners.push(dismissListener);
+
+        // Event C: Ad Failed To Show
+        const failedToShowListener = await AdMob.addListener(
+          RewardAdPluginEvents.FailedToShow,
+          (error: AdMobError) => {
+            console.warn('⚠️ AdMob Rewarded Ad failed to show:', error);
+            settle({ success: false, earnedReward: false, message: 'ad_show_failed' });
+          }
+        );
+        listeners.push(failedToShowListener);
+
+        // Step 3: Show the loaded ad
+        this.isRewardedReady = false;
+        AdMob.showRewardVideoAd().then((rewardItem) => {
+          // If the native plugin resolves onUserEarnedReward
+          if (rewardItem) {
+            console.log('🎉 showRewardVideoAd promise resolved with reward:', rewardItem);
+            earnedReward = true;
+          }
+        }).catch((showError) => {
+          console.warn('⚠️ AdMob.showRewardVideoAd call error:', showError);
+          settle({ success: false, earnedReward: false, message: String(showError) });
+        });
+
+      } catch (err) {
+        console.error('⚠️ Unexpected error in showRewardVideo:', err);
+        settle({ success: false, earnedReward: false, message: String(err) });
       }
-
-      this.isRewardedReady = false;
-      const result = await AdMob.showRewardVideoAd();
-      this.isAdPlaying = false;
-
-      // Preload next ad in background
-      this.preloadRewardVideo().catch(() => {});
-
-      return { success: true, earnedReward: true };
-    } catch (error) {
-      this.isAdPlaying = false;
-      console.error('AdMob showRewardVideoAd error:', error);
-      // Preload next ad in background
-      this.preloadRewardVideo().catch(() => {});
-      return { success: false, earnedReward: false, message: String(error) };
-    }
+    });
   }
 
   /**
