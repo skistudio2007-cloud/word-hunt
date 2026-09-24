@@ -28,12 +28,19 @@ export const DEFAULT_AD_CONFIG: AdConfig = {
   isTestMode: false
 };
 
+// Official Google Sample / Tester Ad Unit IDs for Android
+// Used as seamless fallback whenever production returns Error 3 (NO_FILL)
+export const TEST_REWARDED_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
+export const TEST_INTERSTITIAL_AD_ID = 'ca-app-pub-3940256099942544/1033173712';
+
 class AdMobService {
   private config: AdConfig = { ...DEFAULT_AD_CONFIG };
   private isInitialized = false;
   private isAdPlaying = false;
   private isRewardedReady = false;
   private isInterstitialReady = false;
+  private lastPreparedRewardedAdId: string = DEFAULT_AD_CONFIG.rewardedAdUnitId;
+  private lastPreparedInterstitialAdId: string = DEFAULT_AD_CONFIG.interstitialAdUnitId;
   private initPromise: Promise<void> | null = null;
 
   /**
@@ -65,30 +72,49 @@ class AdMobService {
   }
 
   /**
-   * Pre-loads a real Google AdMob rewarded video ad in memory.
-   * Strictly uses the real production ad unit ID.
+   * Pre-loads a Google AdMob rewarded video ad in memory.
+   * Attempts production ad unit ID first; seamlessly falls back
+   * to Google's official test ad unit if production returns No Fill (Error 3)
+   * or has no inventory yet.
    */
   public async preloadRewardVideo(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
+
+    // 1. Attempt production ad unit first
     try {
       console.log('🔄 Requesting Real AdMob Rewarded Video:', this.config.rewardedAdUnitId);
       await AdMob.prepareRewardVideoAd({
         adId: this.config.rewardedAdUnitId
       });
+      this.lastPreparedRewardedAdId = this.config.rewardedAdUnitId;
       this.isRewardedReady = true;
       console.log('✅ Real AdMob Rewarded Video preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('⚠️ Real AdMob Rewarded Video failed to prepare:', err);
-      this.isRewardedReady = false;
-      return false;
+      console.warn('⚠️ Production AdMob Rewarded Video failed to prepare (e.g. No Fill). Trying Google test fallback:', err);
+      // 2. Fallback to Google official test ad unit so ads ALWAYS show and user is never blocked
+      try {
+        await AdMob.prepareRewardVideoAd({
+          adId: TEST_REWARDED_AD_ID,
+          isTesting: true
+        });
+        this.lastPreparedRewardedAdId = TEST_REWARDED_AD_ID;
+        this.isRewardedReady = true;
+        console.log('✅ Fallback AdMob Rewarded Video preloaded successfully');
+        return true;
+      } catch (testErr) {
+        console.error('❌ Both Production and Fallback Rewarded Ads failed to load:', testErr);
+        this.isRewardedReady = false;
+        return false;
+      }
     }
   }
 
   /**
    * Shows a real Google AdMob Rewarded Video.
-   * Resolves ONLY when the user finishes viewing and the real AdMob reward callback is received.
-   * Never gives a reward on early close, dismiss without reward, load failure, or show failure.
+   * Dual-checks reward through both the native Rewarded event and showRewardVideoAd promise resolution.
+   * Employs a 400ms dismiss grace period so Android WebView bridge race conditions
+   * never falsely trigger "Ad closed early. No hint granted." when the user completed the ad.
    */
   public async showRewardVideo(): Promise<{ success: boolean; earnedReward: boolean; message?: string }> {
     if (!Capacitor.isNativePlatform()) {
@@ -109,6 +135,8 @@ class AdMobService {
       let earnedReward = false;
       let isSettled = false;
       let safetyTimeout: ReturnType<typeof setTimeout> | null = null;
+      let dismissGraceTimeout: ReturnType<typeof setTimeout> | null = null;
+      let rewardFallbackTimeout: ReturnType<typeof setTimeout> | null = null;
       const listeners: PluginListenerHandle[] = [];
 
       // Safe cleanup function for all listeners and state
@@ -116,6 +144,14 @@ class AdMobService {
         if (safetyTimeout) {
           clearTimeout(safetyTimeout);
           safetyTimeout = null;
+        }
+        if (dismissGraceTimeout) {
+          clearTimeout(dismissGraceTimeout);
+          dismissGraceTimeout = null;
+        }
+        if (rewardFallbackTimeout) {
+          clearTimeout(rewardFallbackTimeout);
+          rewardFallbackTimeout = null;
         }
         this.isAdPlaying = false;
         this.isRewardedReady = false;
@@ -157,20 +193,36 @@ class AdMobService {
           }
         }
 
+        const markRewardEarned = () => {
+          console.log('🎉 AdMob Reward confirmed earned from Google SDK!');
+          earnedReward = true;
+          if (dismissGraceTimeout) {
+            clearTimeout(dismissGraceTimeout);
+            dismissGraceTimeout = null;
+            // Dismiss already happened and was waiting for reward confirmation
+            settle({ success: true, earnedReward: true });
+          } else if (!rewardFallbackTimeout) {
+            // Reward earned while ad is still displaying. If dismiss event never arrives within 6s, auto-settle reward
+            rewardFallbackTimeout = setTimeout(() => {
+              console.log('ℹ️ Reward earned and 6s elapsed without dismiss event; auto-settling reward');
+              settle({ success: true, earnedReward: true });
+            }, 6000);
+          }
+        };
+
         // Step 2: Register AdMob event listeners BEFORE showing the ad
 
-        // Event A: Real Reward Earned from AdMob SDK (ONLY valid source of earned reward)
+        // Event A: Real Reward Earned from AdMob SDK (via event listener)
         const rewardListener = await AdMob.addListener(
           RewardAdPluginEvents.Rewarded,
           (rewardItem: AdMobRewardItem) => {
             console.log('🎉 AdMob Rewarded event received from Google SDK:', rewardItem);
-            earnedReward = true;
+            markRewardEarned();
           }
         );
         listeners.push(rewardListener);
 
         // Event B: Ad Dismissed / Closed by user
-        // Synchronously and definitively evaluate earnedReward - no arbitrary timeouts
         const dismissListener = await AdMob.addListener(
           RewardAdPluginEvents.Dismissed,
           () => {
@@ -179,8 +231,16 @@ class AdMobService {
               // User completed ad and received real AdMob reward
               settle({ success: true, earnedReward: true });
             } else {
-              // User closed early or no reward event was received
-              settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
+              // User closed ad, but across the native WebView bridge the Rewarded event or
+              // showRewardVideoAd promise may still be in transit. Give 400ms grace period.
+              dismissGraceTimeout = setTimeout(() => {
+                if (earnedReward) {
+                  settle({ success: true, earnedReward: true });
+                } else {
+                  console.log('ℹ️ No reward confirmed after dismiss grace period - user closed early');
+                  settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
+                }
+              }, 400);
             }
           }
         );
@@ -198,7 +258,12 @@ class AdMobService {
 
         // Step 3: Show the loaded ad
         this.isRewardedReady = false;
-        AdMob.showRewardVideoAd().catch((showError) => {
+        AdMob.showRewardVideoAd({
+          adId: this.lastPreparedRewardedAdId
+        }).then((rewardItem: AdMobRewardItem) => {
+          console.log('🎉 AdMob.showRewardVideoAd promise resolved:', rewardItem);
+          markRewardEarned();
+        }).catch((showError) => {
           console.warn('⚠️ AdMob.showRewardVideoAd call error:', showError);
           settle({ success: false, earnedReward: false, message: String(showError) });
         });
@@ -212,22 +277,38 @@ class AdMobService {
 
   /**
    * Pre-loads a real Google AdMob interstitial ad in memory.
-   * Strictly uses the real production ad unit ID.
+   * Attempts production first, falls back to Google test ad unit if No Fill.
    */
   public async preloadInterstitial(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
+
+    // 1. Try real production ad unit first
     try {
       console.log('🔄 Requesting Real AdMob Interstitial:', this.config.interstitialAdUnitId);
       await AdMob.prepareInterstitial({
         adId: this.config.interstitialAdUnitId
       });
+      this.lastPreparedInterstitialAdId = this.config.interstitialAdUnitId;
       this.isInterstitialReady = true;
       console.log('✅ Real AdMob Interstitial preloaded successfully');
       return true;
     } catch (err) {
-      console.warn('⚠️ Real AdMob Interstitial failed to prepare:', err);
-      this.isInterstitialReady = false;
-      return false;
+      console.warn('⚠️ Production AdMob Interstitial failed to prepare (e.g. No Fill). Trying Google test fallback:', err);
+      // 2. Fallback to Google test ad unit
+      try {
+        await AdMob.prepareInterstitial({
+          adId: TEST_INTERSTITIAL_AD_ID,
+          isTesting: true
+        });
+        this.lastPreparedInterstitialAdId = TEST_INTERSTITIAL_AD_ID;
+        this.isInterstitialReady = true;
+        console.log('✅ Fallback AdMob Interstitial preloaded successfully');
+        return true;
+      } catch (testErr) {
+        console.error('❌ Both Production and Fallback Interstitials failed to load:', testErr);
+        this.isInterstitialReady = false;
+        return false;
+      }
     }
   }
 
@@ -256,7 +337,9 @@ class AdMobService {
       }
 
       this.isInterstitialReady = false;
-      await AdMob.showInterstitial();
+      await AdMob.showInterstitial({
+        adId: this.lastPreparedInterstitialAdId
+      });
       return { success: true };
     } catch (error) {
       console.error('AdMob showInterstitial error:', error);

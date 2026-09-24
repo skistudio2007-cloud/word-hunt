@@ -317,19 +317,20 @@ export default function App() {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
-          showToast('Ads not available');
+          showToast('Ad not ready. Please check internet connection.');
         } else if (result.message === 'ad_in_progress') {
           // Already in progress, do nothing
         } else {
           showToast('Ad closed early. No hint granted.');
         }
       }).catch(() => {
-        showToast('Ads not available');
+        showToast('Ad could not be loaded. Please try again.');
       });
       return;
     }
 
-    showToast('Ads not available');
+    // 3. Web & Dev Fallback: Open interactive Rewarded Ad modal
+    setIsRewardedAdOpen(true);
   }, [puzzleWords, progress, applyLetterHintHighlight]);
 
   // Handle Rewarded Ad completion
