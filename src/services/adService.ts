@@ -57,7 +57,11 @@ class AdMobService {
         this.preloadRewardVideo().catch(() => {});
         this.preloadInterstitial().catch(() => {});
       } catch (error) {
-        console.warn('⚠️ AdMob.initialize warning:', error);
+  console.warn('⚠️ AdMob.initialize warning:', error);
+
+  // Allow a later call to initialize() to retry after a transient failure.
+  this.initPromise = null;
+  this.isInitialized = false;
       }
     })();
 
@@ -216,7 +220,7 @@ class AdMobService {
                   console.log('ℹ️ No reward confirmed after dismiss grace period - user closed early');
                   settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
                 }
-              }, 400);
+              }, 2000);
             }
           }
         );
