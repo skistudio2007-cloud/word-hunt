@@ -116,7 +116,6 @@ class AdMobService {
 
   return false;
   }
-  }
 
   /**
    * Shows a real Google AdMob Rewarded Video.
