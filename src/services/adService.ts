@@ -73,21 +73,49 @@ class AdMobService {
    * Strictly uses the real production ad unit ID.
    */
   public async preloadRewardVideo(): Promise<boolean> {
-    if (!Capacitor.isNativePlatform()) return false;
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
 
+  // Do not start another load if a rewarded ad is already ready.
+  if (this.isRewardedReady) {
+    return true;
+  }
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      console.log('🔄 Requesting Real AdMob Rewarded Video:', this.config.rewardedAdUnitId);
+      console.log(
+        `🔄 Requesting Real AdMob Rewarded Video (attempt ${attempt}/3):`,
+        this.config.rewardedAdUnitId
+      );
+
       await AdMob.prepareRewardVideoAd({
-        adId: this.config.rewardedAdUnitId
+        adId: this.config.rewardedAdUnitId,
       });
+
       this.isRewardedReady = true;
+
       console.log('✅ Real AdMob Rewarded Video preloaded successfully');
+
       return true;
     } catch (err) {
-      console.warn('⚠️ Real AdMob Rewarded Video failed to prepare:', err);
       this.isRewardedReady = false;
-      return false;
+
+      console.warn(
+        `⚠️ Real AdMob Rewarded Video failed to prepare (attempt ${attempt}/3):`,
+        err
+      );
+
+      if (attempt < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
+  }
+
+  console.warn('❌ Rewarded Ad failed after 3 loading attempts');
+
+  return false;
+  }
   }
 
   /**
