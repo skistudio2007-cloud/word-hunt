@@ -317,14 +317,16 @@ export default function App() {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
-          showToast('Ad not ready. Please check internet connection.');
+          // Professional fallback: If native ad inventory has No Fill,
+          // smoothly open the interactive reward modal so the player is never denied their hint!
+          setIsRewardedAdOpen(true);
         } else if (result.message === 'ad_in_progress') {
           // Already in progress, do nothing
         } else {
           showToast('Ad closed early. No hint granted.');
         }
       }).catch(() => {
-        showToast('Ad could not be loaded. Please try again.');
+        setIsRewardedAdOpen(true);
       });
       return;
     }
