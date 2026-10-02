@@ -159,16 +159,31 @@ class AdMobService {
 
     await this.initialize();
 
-    // Fast-load if not yet cached (wait up to 3500ms)
-    if (!this.isRewardedReady) {
-      console.log('⏳ Ad not cached yet, attempting fast load...');
-      const fastLoadPromise = this.preloadRewardVideo();
-      const timeoutPromise = new Promise<boolean>(res => setTimeout(() => res(false), 3500));
-      const loaded = await Promise.race([fastLoadPromise, timeoutPromise]);
-      if (!loaded && !this.isRewardedReady) {
-        return { success: false, earnedReward: false, message: 'ad_load_failed' };
-      }
-    }
+    // Make sure a rewarded ad is available before showing it.
+// If another preload is already running, wait for it instead of
+// immediately returning "ad_load_failed".
+if (!this.isRewardedReady) {
+  console.log('⏳ Rewarded ad is not ready. Loading/waiting...');
+
+  this.preloadRewardVideo().catch(() => {});
+
+  const waitUntil = Date.now() + 5000;
+
+  while (!this.isRewardedReady && Date.now() < waitUntil) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  if (!this.isRewardedReady) {
+    console.warn('❌ Rewarded ad is still not ready after waiting.');
+    return {
+      success: false,
+      earnedReward: false,
+      message: 'ad_load_failed'
+    };
+  }
+
+  console.log('✅ Rewarded ad is ready. Showing now.');
+}
 
     this.isAdPlaying = true;
     soundManager.stopAmbientMusic(); // Silence music during ad playback
@@ -271,7 +286,7 @@ class AdMobService {
                   console.log('ℹ️ No reward confirmed after dismiss grace period - user closed early');
                   settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
                 }
-              }, 1000);
+              }, 2000);
             }
           }
         );
