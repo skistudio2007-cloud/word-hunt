@@ -28,7 +28,6 @@ import { TopHeader } from './components/TopHeader';
 import { LetterGrid } from './components/LetterGrid';
 import { WordList } from './components/WordList';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
-import { RewardedAdModal } from './components/RewardedAdModal';
 import { InterstitialAdModal } from './components/InterstitialAdModal';
 import { WordDefinitionDrawer } from './components/WordDefinitionDrawer';
 import { TutorialOverlay } from './components/TutorialOverlay';
@@ -83,7 +82,6 @@ export default function App() {
   const isLevelTransitioningRef = useRef(false);
 
   // Modals & Drawers
-  const [isRewardedAdOpen, setIsRewardedAdOpen] = useState(false);
   const [isInterstitialAdOpen, setIsInterstitialAdOpen] = useState(false);
   const [milestoneAdLevel, setMilestoneAdLevel] = useState<number>(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -317,22 +315,21 @@ export default function App() {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
-          // Professional fallback: If native ad inventory has No Fill,
-          // smoothly open the interactive reward modal so the player is never denied their hint!
-          setIsRewardedAdOpen(true);
+  showToast('Ad unavailable. Please try again.');
+        }
         } else if (result.message === 'ad_in_progress') {
           // Already in progress, do nothing
         } else {
           showToast('Ad closed early. No hint granted.');
         }
       }).catch(() => {
-        setIsRewardedAdOpen(true);
-      });
+  showToast('Ad unavailable. Please try again.');
+});
       return;
     }
 
-    // 3. Web & Dev Fallback: Open interactive Rewarded Ad modal
-    setIsRewardedAdOpen(true);
+    // 3. Web & Dev Fallback
+showToast('Rewarded ads are available on Android only.');
   }, [puzzleWords, progress, applyLetterHintHighlight]);
 
   // Handle Rewarded Ad completion
@@ -649,16 +646,6 @@ export default function App() {
             />
           )}
 
-          {/* 5. Rewarded Ad Modal (Hint) */}
-          {isRewardedAdOpen && (
-            <RewardedAdModal
-              key="modal-rewarded-ad"
-              language={settings.language}
-              onReward={handleRewardedAdReward}
-              onCancel={handleRewardedAdCancel}
-              onClose={() => setIsRewardedAdOpen(false)}
-            />
-          )}
 
           {/* 6. Interstitial Ad Modal (Every 10 Levels) */}
           {isInterstitialAdOpen && (
