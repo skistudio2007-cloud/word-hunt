@@ -316,7 +316,7 @@ export default function App() {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
   showToast('Ad unavailable. Please try again.');
-        }
+        
         } else if (result.message === 'ad_in_progress') {
           // Already in progress, do nothing
         } else {
