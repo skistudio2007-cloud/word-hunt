@@ -47,7 +47,7 @@ const LetterCell = React.memo<LetterCellProps>(
     return (
       <div
         id={`letter-cell-${cellKey}`}
-        className={`relative flex items-center justify-center rounded-xl font-black select-none ${
+        className={`relative flex items-center justify-center rounded-xl font-black select-none border-0 ${
           isCompleting
             ? 'anim-victory-wave z-20 transform-gpu'
             : isJustFound
@@ -57,9 +57,9 @@ const LetterCell = React.memo<LetterCellProps>(
             : 'scale-100 z-10 anim-tile-drop'
         } ${
           isSelected
-            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-300'
+            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50'
             : isHinted
-            ? 'bg-amber-100 text-amber-950 ring-4 ring-amber-400/80 shadow-lg shadow-amber-400/50 animate-pulse font-black'
+            ? 'bg-amber-100 text-amber-950 shadow-lg shadow-amber-400/50 animate-pulse font-black'
             : isFound
             ? 'shadow-xs font-black'
             : 'bg-slate-50/90 text-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
@@ -459,10 +459,10 @@ export const LetterGrid: React.FC<Props> = ({
             ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
             : { x: 0, y: 0 }
         }
-        className={`w-full h-full rounded-3xl p-3 sm:p-4 relative flex flex-col justify-between transition-colors duration-300 ${
+        className={`w-full h-full rounded-3xl p-3 sm:p-4 relative flex flex-col justify-between transition-colors duration-300 border-0 ${
           highContrast 
-            ? 'bg-white border-4 border-slate-900 shadow-xl' 
-            : 'bg-white border border-slate-200/90 shadow-lg'
+            ? 'bg-white shadow-xl' 
+            : 'bg-white shadow-lg'
         }`}
       >
         {/* Interactive Letter Grid Container */}

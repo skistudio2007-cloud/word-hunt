@@ -46,7 +46,7 @@ export const TopHeader: React.FC<Props> = ({
           soundManager.playTap();
           onBack();
         }}
-        className="btn-bouncy w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+        className="btn-bouncy w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border-0 flex items-center justify-center transition-colors cursor-pointer"
         title="Go back"
       >
         <ArrowLeft className="w-5 h-5" />
@@ -68,7 +68,7 @@ export const TopHeader: React.FC<Props> = ({
             </div>
           )}
         </div>
-        <div className="mt-0.5 px-3 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-2xs">
+        <div className="mt-0.5 px-3 py-0.5 rounded-full bg-white border-0 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-2xs">
           {themeName}
         </div>
       </motion.div>
@@ -83,7 +83,7 @@ export const TopHeader: React.FC<Props> = ({
             soundManager.playTap();
             onUseHint();
           }}
-          className={`btn-bouncy relative px-3.5 py-2 rounded-2xl text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-colors cursor-pointer ring-2 ring-amber-400/60 shadow-amber-500/25 ${
+          className={`btn-bouncy relative px-3.5 py-2 rounded-2xl text-white font-black text-xs flex items-center gap-1.5 shadow-md border-0 transition-colors cursor-pointer shadow-amber-500/25 ${
             hasPurchasedHint
               ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
               : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20'
@@ -117,7 +117,7 @@ export const TopHeader: React.FC<Props> = ({
               soundManager.playTap();
               onPause();
             }}
-            className="btn-bouncy w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+            className="btn-bouncy w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 shadow-sm border-0 flex items-center justify-center transition-colors cursor-pointer"
             title="Pause game"
           >
             <Pause className="w-4 h-4" />

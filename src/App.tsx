@@ -569,7 +569,7 @@ export default function App() {
 
             {/* Bottom Educational Hint Tip */}
             <footer className="text-center pt-2 relative z-10">
-              <p className="text-[11px] font-bold text-slate-700 bg-white/95 py-1 px-3 rounded-full inline-block shadow-2xs border border-slate-200/60">
+              <p className="text-[11px] font-bold text-slate-700 bg-white/95 py-1 px-3 rounded-full inline-block shadow-2xs border-0">
                 💡 Swipe letters to find words
               </p>
             </footer>

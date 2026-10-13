@@ -53,20 +53,15 @@ const TargetWordItem = React.memo<WordItemProps>(({ word, index, highContrast, o
       }
       whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.88 }}
-      className={`btn-bouncy group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs ${
+      className={`btn-bouncy group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs border-0 ${
         word.found
           ? 'font-bold shadow-2xs'
-          : highContrast
-          ? 'bg-white text-slate-900 border-2 border-slate-900'
-          : 'bg-white text-slate-800 border border-slate-200/90 hover:border-blue-400'
+          : 'bg-white text-slate-800'
       }`}
       style={
         word.found
           ? {
               backgroundColor: `${word.color || '#2563EB'}15`,
-              borderColor: `${word.color || '#2563EB'}55`,
-              borderWidth: '1.5px',
-              borderStyle: 'solid',
               color: word.color || '#2563EB'
             }
           : undefined
