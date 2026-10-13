@@ -59,7 +59,7 @@ const LetterCell = React.memo<LetterCellProps>(
           isSelected
             ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-300'
             : isHinted
-            ? 'bg-amber-100 text-amber-900 border-2 border-amber-500 ring-2 ring-amber-400/60 shadow-md shadow-amber-500/30 animate-pulse'
+            ? 'bg-amber-100 text-amber-950 border-2 border-amber-500 ring-4 ring-amber-400/80 shadow-lg shadow-amber-400/50 animate-pulse font-black'
             : isFound
             ? 'shadow-xs font-black'
             : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
@@ -81,7 +81,7 @@ const LetterCell = React.memo<LetterCellProps>(
       >
         {/* Glowing Hint Indicator */}
         {isHinted && (
-          <div className="absolute inset-0 rounded-xl bg-amber-400/40 animate-ping pointer-events-none" />
+          <div className="absolute inset-0 rounded-xl bg-amber-400/30 animate-pulse pointer-events-none ring-2 ring-amber-400/70" />
         )}
 
         {/* Navy / Colored Letter Typography */}

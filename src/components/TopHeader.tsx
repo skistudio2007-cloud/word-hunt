@@ -83,13 +83,15 @@ export const TopHeader: React.FC<Props> = ({
             soundManager.playTap();
             onUseHint();
           }}
-          className={`btn-bouncy relative px-3.5 py-2 rounded-2xl text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-colors cursor-pointer ${
+          className={`btn-bouncy relative px-3.5 py-2 rounded-2xl text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-colors cursor-pointer ring-2 ring-amber-400/60 shadow-amber-500/25 ${
             hasPurchasedHint
               ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
               : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20'
           }`}
           title={hasPurchasedHint ? `Use Hint (${purchasedHints} left)` : 'Watch Google Rewarded Ad for Hint'}
         >
+          {/* Permanent Ambient Glow Aura */}
+          <div className="absolute -inset-0.5 rounded-2xl bg-amber-400/20 blur-[3px] pointer-events-none animate-pulse" />
           {hasPurchasedHint ? (
             <>
               <Lightbulb className="w-4 h-4 fill-white" />

@@ -160,6 +160,15 @@ export default function App() {
 
   // Handle discovered word
   const handleWordFound = useCallback((foundWord: PlacedWord) => {
+    // Gracefully clear hint if the found word was the currently hinted word
+    setHintStartCell(prev => {
+      if (!prev) return null;
+      if (foundWord.cells.some(c => c.row === prev.row && c.col === prev.col)) {
+        return null;
+      }
+      return prev;
+    });
+
     setPuzzleWords(prevWords => {
       const nextWords = prevWords.map(w => {
         if (w.word.toUpperCase() === foundWord.word.toUpperCase() && !w.found) {
@@ -266,13 +275,14 @@ export default function App() {
     const unfoundWords = puzzleWords.filter(w => !w.found);
     if (unfoundWords.length === 0) return false;
 
-    const targetWord = unfoundWords[0];
+    // Pick first unfound word that isn't already the current hintStartCell, or the first unfound word
+    const targetWord = unfoundWords.find(w => !hintStartCell || (w.start.row !== hintStartCell.row || w.start.col !== hintStartCell.col)) || unfoundWords[0];
     setHintStartCell(targetWord.start);
     soundManager.playHintSparkle();
     setHintsUsedInLevel(h => h + 1);
-    setTimeout(() => setHintStartCell(null), 5000);
+    // Hint glow stays permanently until the hinted word is solved!
     return true;
-  }, [puzzleWords]);
+  }, [puzzleWords, hintStartCell]);
 
   // Main direct Hint Button handler (Gameplay Screen Header)
   const handleMainHintTap = useCallback(() => {
