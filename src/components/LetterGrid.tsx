@@ -59,10 +59,10 @@ const LetterCell = React.memo<LetterCellProps>(
           isSelected
             ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-300'
             : isHinted
-            ? 'bg-amber-100 text-amber-950 border-2 border-amber-500 ring-4 ring-amber-400/80 shadow-lg shadow-amber-400/50 animate-pulse font-black'
+            ? 'bg-amber-100 text-amber-950 ring-4 ring-amber-400/80 shadow-lg shadow-amber-400/50 animate-pulse font-black'
             : isFound
             ? 'shadow-xs font-black'
-            : 'bg-slate-50/90 text-slate-800 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
+            : 'bg-slate-50/90 text-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
         }`}
         style={{
           touchAction: 'none',
@@ -71,9 +71,6 @@ const LetterCell = React.memo<LetterCellProps>(
           ...(!isSelected && isFound && primaryFoundColor
             ? {
                 backgroundColor: `${primaryFoundColor}20`,
-                borderColor: primaryFoundColor,
-                borderWidth: '2.5px',
-                borderStyle: 'solid',
                 color: primaryFoundColor
               }
             : {})
