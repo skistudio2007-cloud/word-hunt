@@ -47,7 +47,7 @@ const LetterCell = React.memo<LetterCellProps>(
     return (
       <div
         id={`letter-cell-${cellKey}`}
-        className={`relative flex items-center justify-center rounded-xl font-black select-none border-0 ${
+        className={`relative flex items-center justify-center font-black select-none border-0 bg-transparent shadow-none ${
           isCompleting
             ? 'anim-victory-wave z-20 transform-gpu'
             : isJustFound
@@ -55,40 +55,23 @@ const LetterCell = React.memo<LetterCellProps>(
             : isSelected
             ? 'anim-cell-select z-20 transform-gpu'
             : 'scale-100 z-10 anim-tile-drop'
-        } ${
-          isSelected
-            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/50'
-            : isHinted
-            ? 'bg-amber-100 text-amber-950 shadow-lg shadow-amber-400/50 animate-pulse font-black'
-            : isFound
-            ? 'shadow-xs font-black'
-            : 'bg-slate-50/90 text-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)]'
         }`}
         style={{
           touchAction: 'none',
           contain: 'layout paint',
-          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay,
-          ...(!isSelected && isFound && primaryFoundColor
-            ? {
-                backgroundColor: `${primaryFoundColor}20`,
-                color: primaryFoundColor
-              }
-            : {})
+          animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay
         }}
       >
-        {/* Glowing Hint Indicator */}
-        {isHinted && (
-          <div className="absolute inset-0 rounded-xl bg-amber-400/30 animate-pulse pointer-events-none ring-2 ring-amber-400/70" />
-        )}
-
         {/* Navy / Colored Letter Typography */}
         <span
-          className={`leading-none select-none tracking-wide pointer-events-none ${
+          className={`leading-none select-none tracking-wide pointer-events-none transition-transform duration-100 ${
             isSelected
-              ? 'text-white font-black'
+              ? 'text-blue-600 font-black scale-125 drop-shadow-md'
+              : isHinted
+              ? 'text-amber-500 font-black animate-pulse drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]'
               : isFound
               ? 'font-black'
-              : 'font-extrabold'
+              : 'text-slate-800 font-extrabold'
           } ${
             gridSize <= 5
               ? 'text-2xl sm:text-3xl'
@@ -98,6 +81,11 @@ const LetterCell = React.memo<LetterCellProps>(
               ? 'text-lg sm:text-xl'
               : 'text-base sm:text-lg'
           }`}
+          style={{
+            ...(!isSelected && isFound && primaryFoundColor
+              ? { color: primaryFoundColor }
+              : {})
+          }}
         >
           {letter}
         </span>
