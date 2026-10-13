@@ -28,7 +28,7 @@ import { TopHeader } from './components/TopHeader';
 import { LetterGrid } from './components/LetterGrid';
 import { WordList } from './components/WordList';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
-import { InterstitialAdModal } from './components/InterstitialAdModal';
+
 import { WordDefinitionDrawer } from './components/WordDefinitionDrawer';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { AnimatedThemeBackground } from './components/AnimatedThemeBackground';
@@ -81,9 +81,7 @@ export default function App() {
   const [isLevelCompleting, setIsLevelCompleting] = useState<boolean>(false);
   const isLevelTransitioningRef = useRef(false);
 
-  // Modals & Drawers
-  const [isInterstitialAdOpen, setIsInterstitialAdOpen] = useState(false);
-  const [milestoneAdLevel, setMilestoneAdLevel] = useState<number>(0);
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedWordForInfo, setSelectedWordForInfo] = useState<PlacedWord | null>(null);
   const [hintStartCell, setHintStartCell] = useState<{ row: number; col: number } | null>(null);
@@ -305,31 +303,29 @@ export default function App() {
       return;
     }
 
-    // 2. WATCH GOOGLE REWARDED AD FOR HINT
+    // 2. WATCH REAL GOOGLE REWARDED AD FOR HINT
     if (Capacitor.isNativePlatform()) {
       if (adService.isPlaying()) {
         return;
       }
-      showToast('Loading Google Ad...');
+      showToast('Loading Ad...');
       adService.showRewardVideo().then(result => {
         if (result.earnedReward) {
           handleRewardedAdReward();
         } else if (result.message === 'ad_load_failed') {
-  showToast('Ad unavailable. Please try again.');
-        
+          showToast('Ad not available right now. Please try again later.');
         } else if (result.message === 'ad_in_progress') {
           // Already in progress, do nothing
         } else {
           showToast('Ad closed early. No hint granted.');
         }
       }).catch(() => {
-  showToast('Ad unavailable. Please try again.');
-});
+        showToast('Ad not available right now. Please try again later.');
+      });
       return;
     }
 
-    // 3. Web & Dev Fallback
-showToast('Rewarded ads are available on Android only.');
+    showToast('Ads are only available on mobile.');
   }, [puzzleWords, progress, applyLetterHintHighlight]);
 
   // Handle Rewarded Ad completion
@@ -342,15 +338,6 @@ showToast('Rewarded ads are available on Android only.');
     applyLetterHintHighlight();
     showToast('Hint Unlocked from Ad & Applied!');
   }, [applyLetterHintHighlight]);
-
-  // Handle Rewarded Ad cancellation or failure
-  const handleRewardedAdCancel = useCallback((reason?: string) => {
-    if (reason) {
-      showToast(reason);
-    } else {
-      showToast('Ad unavailable. Please try again.');
-    }
-  }, []);
 
   const handleNextLevel = () => {
     if (isLevelTransitioningRef.current || adService.isPlaying()) {
@@ -370,22 +357,13 @@ showToast('Rewarded ads are available on Android only.');
     // Show Interstitial Ad at Level 16, 22, 28, 34, 40... (every 6 levels after Level 10)
     if (adService.shouldShowLevelMilestoneAd(completedLvl, progress.hasRemovedAds)) {
       if (Capacitor.isNativePlatform()) {
-        showToast('Loading Google Ad...');
         adService.showInterstitial().finally(() => {
           startLevel(progress.currentLevel);
         });
         return;
       }
-      setMilestoneAdLevel(completedLvl);
-      setIsInterstitialAdOpen(true);
-      return;
     }
 
-    startLevel(progress.currentLevel);
-  };
-
-  const handleInterstitialAdClose = () => {
-    setIsInterstitialAdOpen(false);
     startLevel(progress.currentLevel);
   };
 
@@ -646,16 +624,6 @@ showToast('Rewarded ads are available on Android only.');
             />
           )}
 
-
-          {/* 6. Interstitial Ad Modal (Every 10 Levels) */}
-          {isInterstitialAdOpen && (
-            <InterstitialAdModal
-              key="modal-interstitial-ad"
-              completedLevel={milestoneAdLevel}
-              language={settings.language}
-              onClose={handleInterstitialAdClose}
-            />
-          )}
 
           {/* 7. Word Learning Drawer */}
           {selectedWordForInfo && (
