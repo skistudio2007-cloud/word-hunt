@@ -5,7 +5,7 @@ import { PlacedWord } from '../types';
 import { soundManager } from '../services/sound';
 
 interface Props {
-  words: PlacedWord[];
+  words: PlacedWord[]
   onSelectWordForInfo: (word: PlacedWord) => void;
   highContrast?: boolean;
 }
@@ -25,7 +25,7 @@ const TargetWordItem = React.memo<WordItemProps>(({ word, index, highContrast, o
     if (!wasFoundRef.current && word.found) {
       wasFoundRef.current = true;
       setIsJustFound(true);
-      const timer = setTimeout(() => setIsJustFound(false), 500);
+      const timer = setTimeout(() => setIsJustFound(false), 700);
       return () => clearTimeout(timer);
     }
   }, [word.found]);
@@ -43,43 +43,62 @@ const TargetWordItem = React.memo<WordItemProps>(({ word, index, highContrast, o
       initial={{ scale: 0.8, opacity: 0, y: 6 }}
       animate={
         isJustFound
-          ? { scale: [1, 1.32, 0.88, 1.08, 1], rotate: [0, -4, 3, -1, 0], opacity: 1, y: 0 }
+          ? { scale: [1, 1.28, 0.9, 1.1, 1], rotate: [0, -4, 3, -1, 0], opacity: 1, y: 0 }
           : { scale: 1, rotate: 0, opacity: 1, y: 0 }
       }
       transition={
         isJustFound
-          ? { duration: 0.5, ease: 'easeOut' }
+          ? { duration: 0.6, ease: 'easeOut' }
           : { type: 'spring', stiffness: 420, damping: 24, delay: index * 0.03 }
       }
-      whileHover={{ scale: 1.06 }}
+      whileHover={word.found ? { scale: 1.06, y: -1 } : undefined}
       whileTap={{ scale: 0.88 }}
-      className={`btn-bouncy group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs border-0 ${
+      className={`btn-bouncy group relative px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer border-0 overflow-hidden ${
         word.found
-          ? 'font-bold shadow-2xs'
-          : 'bg-white text-slate-800'
+          ? 'shadow-sm'
+          : 'bg-white/80 text-slate-700 shadow-xs'
       }`}
       style={
         word.found
           ? {
-              backgroundColor: `${word.color || '#2563EB'}15`,
-              color: word.color || '#2563EB'
+              backgroundColor: `${word.color || '#2563EB'}18`,
+              color: word.color || '#2563EB',
+              boxShadow: isJustFound
+                ? `0 0 0 2px ${word.color || '#2563EB'}60, 0 4px 12px ${word.color || '#2563EB'}30`
+                : `0 2px 8px ${word.color || '#2563EB'}20`,
             }
           : undefined
       }
       title={word.found ? 'Tap to view definition' : undefined}
     >
+      {/* Shimmer sweep overlay on just found */}
+      {isJustFound && word.found && (
+        <span
+          className="absolute inset-0 pointer-events-none rounded-xl"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${word.color || '#2563EB'}40 50%, transparent 100%)`,
+            backgroundSize: '200% 100%',
+            animation: 'pillShimmer 0.8s ease-out forwards',
+          }}
+        />
+      )}
+
       {word.found ? (
         <>
+          {/* Color dot */}
           <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: word.color || '#2563EB' }}
+            className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+            style={{
+              backgroundColor: word.color || '#2563EB',
+              boxShadow: `0 0 6px ${word.color || '#2563EB'}80`,
+            }}
           />
-          <span className="line-through decoration-current opacity-90">{word.word}</span>
-          <Check className="w-3.5 h-3.5 stroke-[3]" style={{ color: word.color || '#2563EB' }} />
-          <Info className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+          <span className="line-through decoration-current opacity-85 decoration-2">{word.word}</span>
+          <Check className="w-3.5 h-3.5 stroke-[3] ml-0.5" style={{ color: word.color || '#2563EB' }} />
+          <Info className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity ml-auto" />
         </>
       ) : (
-        <span>{word.word}</span>
+        <span className="select-none">{word.word}</span>
       )}
     </motion.button>
   );

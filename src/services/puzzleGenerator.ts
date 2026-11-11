@@ -169,47 +169,32 @@ export function generatePuzzle(levelNumber: number, overrideSeed?: number, langu
     return generateTutorialLevel1(seed, world, language);
   }
 
-  // 1. Pick category from the world themes
-  const themeCategory = rng.choice(world.themeCategories);
+  // 1. Gather ALL words from ALL categories — truly random, not theme-constrained
+  const allCandidates: { word: string; definition?: string; example?: string; category: string }[] = [];
 
-  // 2. Gather candidate words
-  let candidates: { word: string; definition?: string; example?: string }[] = [];
-
-  if (wordDb[themeCategory]) {
-    candidates = wordDb[themeCategory]
+  for (const cat of Object.keys(wordDb)) {
+    const catWords = wordDb[cat]
       .filter(w => w.word.length >= config.minWordLen && w.word.length <= config.maxWordLen)
-      .map(w => ({ word: w.word.toUpperCase(), definition: w.definition, example: w.example }));
-  }
-
-  if (candidates.length < config.wordCount && THEME_FALLBACKS[themeCategory]) {
-    const fallbacks = THEME_FALLBACKS[themeCategory]
-      .filter(w => w.length >= config.minWordLen && w.length <= config.maxWordLen)
       .map(w => ({
-        word: w.toUpperCase(),
-        definition: `A term related to ${themeCategory.toLowerCase().replace('_', ' ')}.`,
-        example: `Explore words within the ${themeCategory.toLowerCase().replace('_', ' ')} theme.`
+        word: w.word.toUpperCase(),
+        definition: w.definition,
+        example: w.example,
+        category: cat
       }));
-    candidates = [...candidates, ...fallbacks];
+    allCandidates.push(...catWords);
   }
 
-  // If still insufficient, pull from other database categories
-  if (candidates.length < config.wordCount) {
-    for (const cat of Object.keys(wordDb)) {
-      if (cat === themeCategory) continue;
-      const extra = wordDb[cat]
-        .filter(w => w.word.length >= config.minWordLen && w.word.length <= config.maxWordLen)
-        .map(w => ({ word: w.word.toUpperCase(), definition: w.definition, example: w.example }));
-      candidates = [...candidates, ...extra];
-      if (candidates.length >= config.wordCount + 10) break;
-    }
-  }
-
-  // Deduplicate and shuffle
-  const uniqueMap = new Map<string, { word: string; definition?: string; example?: string }>();
-  candidates.forEach(c => {
+  // 2. Deduplicate by word text
+  const uniqueMap = new Map<string, { word: string; definition?: string; example?: string; category: string }>();
+  allCandidates.forEach(c => {
     if (!uniqueMap.has(c.word)) uniqueMap.set(c.word, c);
   });
+
+  // 3. Shuffle with seed — different seed per level guarantees different word order
   const uniqueCandidates = rng.shuffle(Array.from(uniqueMap.values()));
+
+  // Pick a display theme label from the world (cosmetic only, not constraining word selection)
+  const themeCategory = rng.choice(world.themeCategories);
 
   // Attempt puzzle placement with backtracking
   let attempt = 0;
@@ -242,9 +227,9 @@ export function generatePuzzle(levelNumber: number, overrideSeed?: number, langu
           id: `${item.word}-${placed.length}`,
           word: item.word,
           displayWord: item.word,
-          category: themeCategory,
-          definition: item.definition || `A key word in the ${themeCategory.replace('_', ' ')} theme.`,
-          example: item.example || `Discover ${item.word} as you master this level.`,
+          category: (item as { category?: string }).category || themeCategory,
+          definition: item.definition || `Discover ${item.word} as you explore this level.`,
+          example: item.example || `Find ${item.word} hidden in the grid!`,
           start: placement.start,
           end: placement.end,
           direction: placement.direction,

@@ -62,13 +62,15 @@ const LetterCell = React.memo<LetterCellProps>(
           animationDelay: isCompleting ? victoryDelay : isJustFound ? '0s' : dropDelay
         }}
       >
-        {/* Navy / Colored Letter Typography */}
+        {/* Letter Typography */}
         <span
-          className={`leading-none select-none tracking-wide pointer-events-none transition-transform duration-100 ${
+          className={`leading-none select-none tracking-wide pointer-events-none transition-all duration-100 ${
             isSelected
-              ? 'text-blue-600 font-black scale-125 drop-shadow-md'
+              ? 'text-blue-600 font-black scale-125 drop-shadow-[0_0_8px_rgba(37,99,235,0.7)]'
               : isHinted
               ? 'text-amber-500 font-black animate-pulse drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]'
+              : isJustFound
+              ? 'font-black anim-letter-shimmer'
               : isFound
               ? 'font-black'
               : 'text-slate-800 font-extrabold'
@@ -89,6 +91,16 @@ const LetterCell = React.memo<LetterCellProps>(
         >
           {letter}
         </span>
+
+        {/* Blue selection ring glow behind selected letter */}
+        {isSelected && (
+          <span
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)',
+            }}
+          />
+        )}
       </div>
     );
   },
@@ -107,6 +119,27 @@ const LetterCell = React.memo<LetterCellProps>(
 );
 LetterCell.displayName = 'LetterCell';
 
+// Sparkle particle configuration
+interface SparkleParticle {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  tx: number;
+  ty: number;
+  rot: number;
+  size: number;
+}
+
+// Score float text state
+interface ScoreFloat {
+  id: string;
+  word: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
 export const LetterGrid: React.FC<Props> = ({
   grid,
   words,
@@ -116,6 +149,7 @@ export const LetterGrid: React.FC<Props> = ({
   isCompleting = false
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
   const cachedRectRef = useRef<DOMRect | null>(null);
   const lastPointerCellRef = useRef<Coordinate | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -123,9 +157,12 @@ export const LetterGrid: React.FC<Props> = ({
   const [currentSelection, setCurrentSelection] = useState<Coordinate[]>([]);
   const [isWrongSelection, setIsWrongSelection] = useState(false);
   const [justFoundCells, setJustFoundCells] = useState<Coordinate[] | null>(null);
+  const [sparkles, setSparkles] = useState<SparkleParticle[]>([]);
+  const [scoreFloats, setScoreFloats] = useState<ScoreFloat[]>([]);
   const prevFoundCountRef = useRef(words.filter(w => w.found).length);
   const justFoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrongSelectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sparkleIdRef = useRef(0);
 
   // Clean up all pending animation timers on unmount
   React.useEffect(() => {
@@ -135,7 +172,7 @@ export const LetterGrid: React.FC<Props> = ({
     };
   }, []);
 
-  // Trigger subtle pop when a word is marked found
+  // Trigger sparkle burst when a word is marked found
   React.useEffect(() => {
     const currentFoundWords = words.filter(w => w.found);
     if (currentFoundWords.length > prevFoundCountRef.current) {
@@ -144,11 +181,60 @@ export const LetterGrid: React.FC<Props> = ({
         setJustFoundCells(latestFound.cells);
         if (justFoundTimeoutRef.current) clearTimeout(justFoundTimeoutRef.current);
         justFoundTimeoutRef.current = setTimeout(() => setJustFoundCells(null), 500);
+
+        // Spawn sparkle particles at the midpoint of found word's start/end
+        if (boardRef.current) {
+          const rect = boardRef.current.getBoundingClientRect();
+          const step = 100 / (grid.length || 1);
+          const midRow = (latestFound.start.row + latestFound.end.row) / 2 + 0.5;
+          const midCol = (latestFound.start.col + latestFound.end.col) / 2 + 0.5;
+          const pxX = (midCol / grid.length) * rect.width;
+          const pxY = (midRow / grid.length) * rect.height;
+
+          const wordColor = latestFound.color || '#2563EB';
+          const SPARKLE_COUNT = 10;
+          const newSparkles: SparkleParticle[] = [];
+          for (let i = 0; i < SPARKLE_COUNT; i++) {
+            const angle = (i / SPARKLE_COUNT) * Math.PI * 2;
+            const dist = 22 + Math.random() * 28;
+            const tx = Math.cos(angle) * dist;
+            const ty = Math.sin(angle) * dist;
+            newSparkles.push({
+              id: `sp-${sparkleIdRef.current++}`,
+              x: pxX,
+              y: pxY,
+              color: wordColor,
+              tx,
+              ty,
+              rot: (Math.random() - 0.5) * 180,
+              size: 4 + Math.random() * 5
+            });
+          }
+          setSparkles(prev => [...prev, ...newSparkles]);
+          // Remove sparkles after animation completes
+          setTimeout(() => {
+            setSparkles(prev => prev.filter(s => !newSparkles.some(ns => ns.id === s.id)));
+          }, 650);
+
+          // Score float text
+          const wordText = latestFound.word;
+          const floatId = `sf-${sparkleIdRef.current++}`;
+          setScoreFloats(prev => [...prev, {
+            id: floatId,
+            word: wordText,
+            x: pxX,
+            y: pxY,
+            color: wordColor
+          }]);
+          setTimeout(() => {
+            setScoreFloats(prev => prev.filter(sf => sf.id !== floatId));
+          }, 1200);
+        }
       }
       prevFoundCountRef.current = currentFoundWords.length;
     }
     prevFoundCountRef.current = currentFoundWords.length;
-  }, [words]);
+  }, [words, grid.length]);
 
   // O(1) hash lookup set for just found cells
   const justFoundSet = React.useMemo(() => {
@@ -196,7 +282,6 @@ export const LetterGrid: React.FC<Props> = ({
   );
 
   // Compute straight line in 8 discrete directions from start to target
-  // Directions: (-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)
   const calculateLineSelection = useCallback(
     (start: Coordinate, target: Coordinate): Coordinate[] => {
       const dRow = target.row - start.row;
@@ -213,19 +298,15 @@ export const LetterGrid: React.FC<Props> = ({
       let stepCol = 0;
       let length = 0;
 
-      // Classify into exact 8 directions using angular threshold (tan 22.5° ≈ 0.4142)
       if (absRow <= 0.4142 * absCol) {
-        // Horizontal: (0, 1) or (0, -1)
         stepRow = 0;
         stepCol = Math.sign(dCol);
         length = absCol + 1;
       } else if (absRow >= 2.4142 * absCol) {
-        // Vertical: (1, 0) or (-1, 0)
         stepRow = Math.sign(dRow);
         stepCol = 0;
         length = absRow + 1;
       } else {
-        // Diagonal: (1,1), (-1,-1), (1,-1), or (-1,1)
         stepRow = Math.sign(dRow);
         stepCol = Math.sign(dCol);
         length = Math.min(absRow, absCol) + 1;
@@ -270,7 +351,6 @@ export const LetterGrid: React.FC<Props> = ({
     const cell = getCellFromPointer(e.clientX, e.clientY);
     if (!cell) return;
 
-    // High refresh rate (90-120Hz) optimization: skip if still inside the same cell
     if (
       lastPointerCellRef.current &&
       lastPointerCellRef.current.row === cell.row &&
@@ -319,17 +399,14 @@ export const LetterGrid: React.FC<Props> = ({
       const target = w.word.toUpperCase();
 
       if (selectedLetters === target || reversedLetters === target) {
-        // Forward coordinate match
         const matchForward = (
           w.start.row === startCell.row && w.start.col === startCell.col &&
           w.end.row === endCell.row && w.end.col === endCell.col
         );
-        // Reverse coordinate match
         const matchBackward = (
           w.start.row === endCell.row && w.start.col === endCell.col &&
           w.end.row === startCell.row && w.end.col === startCell.col
         );
-        // Discrete cells sequence match (forward or reverse)
         const matchCellsForward = w.cells.length === currentSelection.length &&
           w.cells.every((cell, idx) => cell.row === currentSelection[idx].row && cell.col === currentSelection[idx].col);
         const matchCellsReverse = w.cells.length === currentSelection.length &&
@@ -409,14 +486,14 @@ export const LetterGrid: React.FC<Props> = ({
     const y1 = (first.row + 0.5) * step;
     const x2 = (last.col + 0.5) * step;
     const y2 = (last.row + 0.5) * step;
-    const strokeW = step * 0.76;
+    const strokeW = step * 0.78;
     return { x1, y1, x2, y2, strokeW };
   }, [isSelecting, currentSelection, gridSize]);
 
   // Found words persistent highlighter capsules
   const foundCapsules = React.useMemo(() => {
     const step = 1000 / gridSize;
-    const strokeW = step * 0.70;
+    const strokeW = step * 0.72;
     return words
       .filter(w => w.found)
       .map(w => {
@@ -439,17 +516,18 @@ export const LetterGrid: React.FC<Props> = ({
   return (
     <div className="relative w-full max-w-[400px] aspect-square mx-auto p-1 sm:p-2 select-none touch-none">
       {/* Large White Rounded Puzzle Board with subtle bounce on victory */}
-      <motion.div 
+      <motion.div
+        ref={boardRef}
         animate={
-          isCompleting 
+          isCompleting
             ? { scale: [1, 0.98, 1.02, 1], transition: { duration: 0.5, ease: 'easeInOut' } }
-            : isWrongSelection 
-            ? { x: [-3, 3, -2, 2, 0], transition: { duration: 0.25 } }
+            : isWrongSelection
+            ? { x: [-4, 4, -3, 3, -1, 1, 0], transition: { duration: 0.3, ease: 'easeOut' } }
             : { x: 0, y: 0 }
         }
         className={`w-full h-full rounded-3xl p-3 sm:p-4 relative flex flex-col justify-between transition-colors duration-300 border-0 ${
-          highContrast 
-            ? 'bg-white shadow-xl' 
+          highContrast
+            ? 'bg-white shadow-xl'
             : 'bg-white shadow-lg'
         }`}
       >
@@ -469,40 +547,97 @@ export const LetterGrid: React.FC<Props> = ({
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
           }}
         >
-          {/* Real-time SVG Pill Highlighter Trails (Isolated GPU Composition) */}
+          {/* Real-time SVG Pill Highlighter Trails */}
           <svg
             viewBox="0 0 1000 1000"
             className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
             preserveAspectRatio="none"
             style={{ transform: 'translateZ(0)' }}
           >
-            {/* Found Words Connecting Capsules */}
+            <defs>
+              {/* Animated gradient for active selection */}
+              <linearGradient id="selectionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#2563EB" stopOpacity="0.5" />
+                <stop offset="50%" stopColor="#818CF8" stopOpacity="0.65" />
+                <stop offset="100%" stopColor="#2563EB" stopOpacity="0.5" />
+              </linearGradient>
+              {/* Soft blur filter for found capsules glow */}
+              <filter id="capsuleGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Found Words Connecting Capsules — with subtle glow */}
             {foundCapsules.map((cap) => (
-              <line
-                key={`found-cap-${cap.id}`}
-                x1={cap.x1}
-                y1={cap.y1}
-                x2={cap.x2}
-                y2={cap.y2}
-                stroke={cap.color}
-                strokeWidth={cap.strokeW}
-                strokeLinecap="round"
-                opacity="0.22"
-              />
+              <g key={`found-cap-${cap.id}`}>
+                {/* Soft glow layer */}
+                <line
+                  x1={cap.x1}
+                  y1={cap.y1}
+                  x2={cap.x2}
+                  y2={cap.y2}
+                  stroke={cap.color}
+                  strokeWidth={cap.strokeW * 1.3}
+                  strokeLinecap="round"
+                  opacity="0.08"
+                />
+                {/* Main capsule */}
+                <line
+                  x1={cap.x1}
+                  y1={cap.y1}
+                  x2={cap.x2}
+                  y2={cap.y2}
+                  stroke={cap.color}
+                  strokeWidth={cap.strokeW}
+                  strokeLinecap="round"
+                  opacity="0.24"
+                />
+              </g>
             ))}
 
-            {/* Active Finger Drag Capsule */}
+            {/* Active Finger Drag Capsule — gradient + glow */}
             {selectionCapsule && (
-              <line
-                x1={selectionCapsule.x1}
-                y1={selectionCapsule.y1}
-                x2={selectionCapsule.x2}
-                y2={selectionCapsule.y2}
-                stroke="#2563EB"
-                strokeWidth={selectionCapsule.strokeW}
-                strokeLinecap="round"
-                opacity="0.28"
-              />
+              <g>
+                {/* Outer glow */}
+                <line
+                  x1={selectionCapsule.x1}
+                  y1={selectionCapsule.y1}
+                  x2={selectionCapsule.x2}
+                  y2={selectionCapsule.y2}
+                  stroke="#2563EB"
+                  strokeWidth={selectionCapsule.strokeW * 1.5}
+                  strokeLinecap="round"
+                  opacity="0.12"
+                  className="anim-trail-glow"
+                />
+                {/* Core gradient capsule */}
+                <line
+                  x1={selectionCapsule.x1}
+                  y1={selectionCapsule.y1}
+                  x2={selectionCapsule.x2}
+                  y2={selectionCapsule.y2}
+                  stroke="url(#selectionGrad)"
+                  strokeWidth={selectionCapsule.strokeW}
+                  strokeLinecap="round"
+                  opacity="0.42"
+                  className="anim-trail-glow"
+                />
+                {/* Bright core line */}
+                <line
+                  x1={selectionCapsule.x1}
+                  y1={selectionCapsule.y1}
+                  x2={selectionCapsule.x2}
+                  y2={selectionCapsule.y2}
+                  stroke="white"
+                  strokeWidth={selectionCapsule.strokeW * 0.3}
+                  strokeLinecap="round"
+                  opacity="0.5"
+                />
+              </g>
             )}
           </svg>
 
@@ -535,6 +670,55 @@ export const LetterGrid: React.FC<Props> = ({
             })
           )}
         </div>
+
+        {/* Sparkle Particles overlay — rendered inside board, absolutely positioned */}
+        {sparkles.map(sp => (
+          <div
+            key={sp.id}
+            className="absolute pointer-events-none anim-sparkle z-50"
+            style={{
+              left: sp.x,
+              top: sp.y,
+              width: sp.size,
+              height: sp.size,
+              marginLeft: -sp.size / 2,
+              marginTop: -sp.size / 2,
+              '--spx': `${sp.tx}px`,
+              '--spy': `${sp.ty}px`,
+              '--spr': `${sp.rot}deg`,
+            } as React.CSSProperties}
+          >
+            {/* Star shape */}
+            <svg viewBox="0 0 10 10" width={sp.size} height={sp.size}>
+              <polygon
+                points="5,0 6,4 10,4 7,6.5 8,10 5,7.5 2,10 3,6.5 0,4 4,4"
+                fill={sp.color}
+                opacity="0.95"
+              />
+            </svg>
+          </div>
+        ))}
+
+        {/* Score float-up text overlay */}
+        {scoreFloats.map(sf => (
+          <div
+            key={sf.id}
+            className="absolute pointer-events-none anim-score-float z-50"
+            style={{
+              left: sf.x,
+              top: sf.y - 10,
+              color: sf.color,
+              fontWeight: 900,
+              fontSize: 13,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              textShadow: `0 0 10px ${sf.color}80`,
+            }}
+          >
+            {sf.word}
+          </div>
+        ))}
       </motion.div>
     </div>
   );
