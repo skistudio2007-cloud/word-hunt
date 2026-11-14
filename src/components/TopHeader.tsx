@@ -68,9 +68,6 @@ export const TopHeader: React.FC<Props> = ({
             </div>
           )}
         </div>
-        <div className="mt-0.5 px-3 py-0.5 rounded-full bg-white border-0 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-2xs">
-          {themeName}
-        </div>
       </motion.div>
 
       {/* Hint & Pause Buttons */}
