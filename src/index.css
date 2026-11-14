@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Ultra-smooth GPU rendering and touch responsiveness */
+/* ─── Global base: smooth rendering, no flash on tap ─── */
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
@@ -21,450 +21,228 @@ html, body, #root {
   text-rendering: optimizeLegibility;
 }
 
-/* GPU hardware acceleration for smooth 60-120fps animations */
+/* GPU compositing hint */
 .gpu-layer {
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
-  perspective: 1000px;
 }
 
-/* Background floating & breathing animations (100% GPU Compositor Thread) */
+/* ─────────────────────────────────────────
+   BACKGROUND / AMBIENT ANIMATIONS
+   ───────────────────────────────────────── */
+
 @keyframes bgFloat1 {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate3d(0, -16px, 0) rotate(8deg);
-  }
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%       { transform: translate3d(0, -16px, 0) rotate(8deg); }
 }
-
 @keyframes bgFloat2 {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate3d(0, 14px, 0) rotate(-7deg);
-  }
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%       { transform: translate3d(0, 14px, 0) rotate(-7deg); }
 }
-
 @keyframes bgPulseSoft {
-  0%, 100% {
-    transform: scale3d(1, 1, 1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: scale3d(1.08, 1.08, 1);
-    opacity: 0.9;
-  }
+  0%, 100% { transform: scale3d(1,1,1); opacity: 0.7; }
+  50%       { transform: scale3d(1.08,1.08,1); opacity: 0.9; }
 }
-
 @keyframes sunburstSpin {
-  from {
-    transform: translate3d(-50%, -50%, 0) rotate(0deg);
-  }
-  to {
-    transform: translate3d(-50%, -50%, 0) rotate(360deg);
-  }
+  from { transform: translate3d(-50%,-50%,0) rotate(0deg); }
+  to   { transform: translate3d(-50%,-50%,0) rotate(360deg); }
 }
 
-@keyframes confettiFlutter {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-    transform: translate3d(calc(var(--tx, 0px) * 0.45), calc(var(--ty, 0px) * 0.45 - 45px), 0) rotate(calc(var(--tr, 0deg) * 0.3)) scale(1.35);
-  }
-  50% {
-    opacity: 1;
-    transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) rotate(var(--tr, 180deg)) scale(1.1);
-  }
-  80% {
-    opacity: 0.95;
-  }
+.anim-bg-float-1 { animation: bgFloat1 7s ease-in-out infinite; will-change: transform; }
+.anim-bg-float-2 { animation: bgFloat2 9s ease-in-out infinite; will-change: transform; }
+.anim-bg-pulse    { animation: bgPulseSoft 8s ease-in-out infinite; will-change: transform, opacity; }
+.anim-sunburst    { animation: sunburstSpin 20s linear infinite; will-change: transform; }
+
+/* ─────────────────────────────────────────
+   LEVEL COMPLETE SCREEN KEYFRAMES
+   (All GPU compositor-only: transform + opacity)
+   ───────────────────────────────────────── */
+
+/* Confetti rain — pieces fall straight down with side sway */
+@keyframes lcRain {
+  0%   { transform: translate3d(0, -20px, 0) rotate(0deg) scale(1); opacity: 0; }
+  8%   { opacity: 1; }
+  85%  { opacity: 1; }
   100% {
-    transform: translate3d(calc(var(--tx, 0px) * 1.12), calc(var(--ty, 0px) + 80px), 0) rotate(calc(var(--tr, 360deg) + 180deg)) scale(0.65);
+    transform: translate3d(0, calc(100vh + 60px), 0) rotate(var(--rot, 540deg)) scale(0.6);
     opacity: 0;
   }
 }
 
-@keyframes trophyJuicyPop {
-  0% {
-    transform: scale3d(0, 0, 1) rotate(-28deg);
-    opacity: 0;
-  }
-  48% {
-    transform: scale3d(1.34, 1.34, 1) rotate(6deg);
-    opacity: 1;
-  }
-  72% {
-    transform: scale3d(0.9, 0.9, 1) rotate(-3deg);
-  }
-  88% {
-    transform: scale3d(1.06, 1.06, 1) rotate(1deg);
-  }
-  100% {
-    transform: scale3d(1, 1, 1) rotate(0deg);
-    opacity: 1;
-  }
+/* Trophy / badge halo pulse */
+@keyframes lcHaloPulse {
+  0%, 100% { transform: scale3d(1,1,1); opacity: 0.3; }
+  50%       { transform: scale3d(1.25,1.25,1); opacity: 0.55; }
 }
 
-@keyframes starJuicyPop {
-  0% {
-    transform: scale3d(0, 0, 1) rotate(-40deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale3d(1.46, 1.46, 1) rotate(8deg);
-    opacity: 1;
-  }
-  75% {
-    transform: scale3d(0.88, 0.88, 1) rotate(-3deg);
-  }
-  90% {
-    transform: scale3d(1.08, 1.08, 1) rotate(1deg);
-  }
-  100% {
-    transform: scale3d(1, 1, 1) rotate(0deg);
-    opacity: 1;
-  }
+/* Sparkle dots orbiting the trophy */
+@keyframes lcSparkDot {
+  0%, 100% { transform: translate(-50%,-50%) scale3d(1,1,1); opacity: 0.7; }
+  50%       { transform: translate(-50%,-50%) scale3d(0.4,0.4,1); opacity: 0.2; }
 }
 
-@keyframes buttonJuicyEntrance {
-  0% {
-    transform: translate3d(0, 24px, 0) scale3d(0.88, 0.88, 1);
-    opacity: 0;
-  }
-  65% {
-    transform: translate3d(0, -4px, 0) scale3d(1.04, 1.04, 1);
-    opacity: 1;
-  }
-  85% {
-    transform: translate3d(0, 1px, 0) scale3d(0.98, 0.98, 1);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-    opacity: 1;
-  }
+/* Button shimmer sweep */
+@keyframes lcBtnShimmer {
+  0%   { transform: translate3d(-100%, 0, 0); }
+  100% { transform: translate3d(200%, 0, 0); }
 }
 
-@keyframes celebrationCardBounce {
-  0% {
-    transform: scale3d(0.65, 0.65, 1) translate3d(0, 32px, 0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale3d(1.12, 1.12, 1) translate3d(0, -8px, 0);
-    opacity: 1;
-  }
-  75% {
-    transform: scale3d(0.95, 0.95, 1) translate3d(0, 2px, 0);
-  }
-  88% {
-    transform: scale3d(1.03, 1.03, 1) translate3d(0, -1px, 0);
-  }
-  100% {
-    transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
+/* ─────────────────────────────────────────
+   GAMEPLAY GRID ANIMATIONS
+   ───────────────────────────────────────── */
 
-.anim-celebration-card {
-  animation: celebrationCardBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  will-change: transform, opacity;
-}
-
-.anim-bg-float-1 {
-  animation: bgFloat1 7s ease-in-out infinite;
-  will-change: transform;
-}
-
-.anim-bg-float-2 {
-  animation: bgFloat2 9s ease-in-out infinite;
-  will-change: transform;
-}
-
-.anim-bg-pulse {
-  animation: bgPulseSoft 8s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-
-.anim-sunburst {
-  animation: sunburstSpin 20s linear infinite;
-  will-change: transform;
-}
-
-/* Staggered Tile Drop-in entrance from top with juicy bounce */
+/* Tile drop-in on level load — ONLY runs once (animation-fill-mode: both) */
 @keyframes tileDropIn {
-  0% {
-    transform: translate3d(0, -42px, 0) scale3d(0.72, 0.72, 1);
-    opacity: 0;
-  }
-  62% {
-    transform: translate3d(0, 3px, 0) scale3d(1.06, 1.06, 1);
-    opacity: 1;
-  }
-  84% {
-    transform: translate3d(0, -1px, 0) scale3d(0.98, 0.98, 1);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-    opacity: 1;
-  }
+  0%   { transform: translate3d(0, -36px, 0) scale3d(0.78, 0.78, 1); opacity: 0; }
+  60%  { transform: translate3d(0, 3px, 0) scale3d(1.05, 1.05, 1); opacity: 1; }
+  82%  { transform: translate3d(0, -1px, 0) scale3d(0.98, 0.98, 1); }
+  100% { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1; }
 }
 
-/* Energetic pop when a word is matched */
-@keyframes wordJustFoundPop {
-  0% {
-    transform: scale3d(1, 1, 1);
-  }
-  28% {
-    transform: scale3d(1.32, 1.32, 1) rotate(-3deg);
-  }
-  60% {
-    transform: scale3d(0.9, 0.9, 1) rotate(2deg);
-  }
-  82% {
-    transform: scale3d(1.06, 1.06, 1) rotate(-1deg);
-  }
-  100% {
-    transform: scale3d(1, 1, 1) rotate(0deg);
-  }
+/* Word found — cells bounce joyfully */
+@keyframes wordFoundPop {
+  0%   { transform: scale3d(1,1,1); }
+  28%  { transform: scale3d(1.28, 1.28, 1) rotate(-2deg); }
+  58%  { transform: scale3d(0.92, 0.92, 1) rotate(1deg); }
+  80%  { transform: scale3d(1.05, 1.05, 1); }
+  100% { transform: scale3d(1, 1, 1) rotate(0deg); }
 }
 
-/* Selected letter cell juicy bounce pop */
+/* Selected letter tap micro-bounce */
 @keyframes cellSelectBounce {
-  0% {
-    transform: scale3d(1, 1, 1);
-  }
-  45% {
-    transform: scale3d(1.24, 1.24, 1) rotate(-2deg);
-  }
-  75% {
-    transform: scale3d(1.1, 1.1, 1) rotate(1deg);
-  }
-  100% {
-    transform: scale3d(1.15, 1.15, 1) rotate(0deg);
-  }
+  0%   { transform: scale3d(1,1,1); }
+  45%  { transform: scale3d(1.22, 1.22, 1) rotate(-2deg); }
+  75%  { transform: scale3d(1.1, 1.1, 1) rotate(1deg); }
+  100% { transform: scale3d(1.14, 1.14, 1) rotate(0deg); }
 }
 
-/* Bouncy heartbeat pulse for main action buttons (Play) */
-@keyframes bouncyPulse {
-  0%, 100% {
-    transform: scale3d(1, 1, 1);
-  }
-  25% {
-    transform: scale3d(1.06, 1.06, 1);
-  }
-  45% {
-    transform: scale3d(0.97, 0.97, 1);
-  }
-  65% {
-    transform: scale3d(1.03, 1.03, 1);
-  }
-  80% {
-    transform: scale3d(0.99, 0.99, 1);
-  }
-}
-
-/* Playful bouncy wobble for icons & badges */
-@keyframes bouncyWobble {
-  0%, 100% {
-    transform: scale3d(1, 1, 1) rotate(0deg);
-  }
-  20% {
-    transform: scale3d(1.1, 0.92, 1) rotate(-4deg);
-  }
-  40% {
-    transform: scale3d(0.94, 1.08, 1) rotate(3deg);
-  }
-  60% {
-    transform: scale3d(1.05, 0.97, 1) rotate(-2deg);
-  }
-  80% {
-    transform: scale3d(0.98, 1.02, 1) rotate(1deg);
-  }
-}
-
-/* Bouncy modal entrance pop */
-@keyframes modalBouncyEntrance {
-  0% {
-    transform: scale3d(0.75, 0.75, 1) translate3d(0, 24px, 0);
-    opacity: 0;
-  }
-  60% {
-    transform: scale3d(1.06, 1.06, 1) translate3d(0, -4px, 0);
-    opacity: 1;
-  }
-  82% {
-    transform: scale3d(0.97, 0.97, 1) translate3d(0, 1px, 0);
-  }
-  100% {
-    transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-/* Celebratory victory wave across board */
+/* Victory wave sweep across all board cells */
 @keyframes victoryTileWave {
-  0%, 100% {
-    transform: scale3d(1, 1, 1);
-  }
-  35% {
-    transform: scale3d(1.26, 1.26, 1) translate3d(0, -10px, 0) rotate(3deg);
-  }
-  70% {
-    transform: scale3d(0.92, 0.92, 1) translate3d(0, 2px, 0) rotate(-1deg);
-  }
+  0%, 100% { transform: scale3d(1,1,1) rotate(0deg); }
+  38%       { transform: scale3d(1.22, 1.22, 1) translate3d(0,-8px,0) rotate(2.5deg); }
+  68%       { transform: scale3d(0.94, 0.94, 1) translate3d(0,2px,0) rotate(-1deg); }
 }
 
-.anim-tile-drop {
-  animation: tileDropIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-  will-change: transform, opacity;
-}
-
-.anim-word-pop {
-  animation: wordJustFoundPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.anim-cell-select {
-  animation: cellSelectBounce 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.anim-bouncy-pulse {
-  animation: bouncyPulse 2.4s ease-in-out infinite;
-}
-
-.anim-bouncy-wobble {
-  animation: bouncyWobble 1.8s ease-in-out infinite;
-}
-
-.anim-modal-bounce {
-  animation: modalBouncyEntrance 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.anim-victory-wave {
-  animation: victoryTileWave 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* Reusable tactile bouncy button class */
-.btn-bouncy {
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease-out;
-  will-change: transform;
-}
-.btn-bouncy:active {
-  transform: scale3d(0.88, 0.88, 1);
-}
-
-/* =============================================
-   ENHANCED WORD SELECTION & FOUND ANIMATIONS
-   ============================================= */
-
-/* Sparkle star burst for each sparkle particle */
+/* Sparkle star burst (each particle) */
 @keyframes sparklePop {
-  0% {
-    transform: translate3d(0, 0, 0) scale3d(0, 0, 1) rotate(0deg);
-    opacity: 1;
-  }
-  60% {
-    opacity: 1;
-    transform: translate3d(var(--spx, 0px), var(--spy, 0px), 0) scale3d(1.4, 1.4, 1) rotate(var(--spr, 45deg));
-  }
-  100% {
-    transform: translate3d(calc(var(--spx, 0px) * 1.6), calc(var(--spy, 0px) * 1.6 + 8px), 0) scale3d(0, 0, 1) rotate(calc(var(--spr, 45deg) + 90deg));
-    opacity: 0;
-  }
-}
-
-/* Radial glow burst on word found */
-@keyframes wordFoundRipple {
-  0% {
-    transform: scale3d(0.6, 0.6, 1);
-    opacity: 0.9;
-  }
-  60% {
-    opacity: 0.4;
-    transform: scale3d(1.8, 1.8, 1);
-  }
-  100% {
-    transform: scale3d(2.6, 2.6, 1);
-    opacity: 0;
-  }
-}
-
-/* Letter shimmer sweep */
-@keyframes letterShimmer {
-  0% {
-    filter: brightness(1) drop-shadow(0 0 0px transparent);
-  }
-  40% {
-    filter: brightness(1.5) drop-shadow(0 0 12px currentColor);
-  }
-  100% {
-    filter: brightness(1) drop-shadow(0 0 0px transparent);
-  }
+  0%   { transform: translate3d(0,0,0) scale3d(0,0,1); opacity: 1; }
+  60%  { transform: translate3d(var(--spx,0px), var(--spy,0px), 0) scale3d(1.4,1.4,1) rotate(var(--spr,45deg)); opacity: 1; }
+  100% { transform: translate3d(calc(var(--spx,0px)*1.5), calc(var(--spy,0px)*1.5 + 6px), 0) scale3d(0,0,1) rotate(calc(var(--spr,45deg)+90deg)); opacity: 0; }
 }
 
 /* Score float-up text */
 @keyframes scoreFloat {
-  0% {
-    transform: translate3d(-50%, 0, 0) scale3d(0.6, 0.6, 1);
-    opacity: 0;
-  }
-  25% {
-    transform: translate3d(-50%, -16px, 0) scale3d(1.2, 1.2, 1);
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-    transform: translate3d(-50%, -40px, 0) scale3d(1, 1, 1);
-  }
-  100% {
-    transform: translate3d(-50%, -72px, 0) scale3d(0.8, 0.8, 1);
-    opacity: 0;
-  }
+  0%   { transform: translate3d(-50%, 0, 0) scale3d(0.7, 0.7, 1); opacity: 0; }
+  22%  { transform: translate3d(-50%, -18px, 0) scale3d(1.15, 1.15, 1); opacity: 1; }
+  68%  { opacity: 1; transform: translate3d(-50%, -42px, 0) scale3d(1, 1, 1); }
+  100% { transform: translate3d(-50%, -70px, 0) scale3d(0.8, 0.8, 1); opacity: 0; }
 }
 
-/* SVG selection trail breathing glow */
+/* SVG selection-trail breathing (opacity only — stays on compositor) */
 @keyframes trailGlow {
   0%, 100% { opacity: 0.28; }
-  50% { opacity: 0.45; }
+  50%       { opacity: 0.46; }
+}
+
+/* Letter shimmer on just-found */
+@keyframes letterShimmer {
+  0%   { filter: brightness(1.0) drop-shadow(0 0 0px transparent); }
+  38%  { filter: brightness(1.6) drop-shadow(0 0 10px currentColor); }
+  100% { filter: brightness(1.0) drop-shadow(0 0 0px transparent); }
 }
 
 /* Word pill found shimmer sweep */
 @keyframes pillShimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Bouncy heartbeat for play buttons */
+@keyframes bouncyPulse {
+  0%, 100% { transform: scale3d(1,1,1); }
+  25%       { transform: scale3d(1.06,1.06,1); }
+  45%       { transform: scale3d(0.97,0.97,1); }
+  65%       { transform: scale3d(1.03,1.03,1); }
+  80%       { transform: scale3d(0.99,0.99,1); }
+}
+
+/* Playful wobble for icons */
+@keyframes bouncyWobble {
+  0%, 100% { transform: scale3d(1,1,1) rotate(0deg); }
+  20%       { transform: scale3d(1.1,0.92,1) rotate(-4deg); }
+  40%       { transform: scale3d(0.94,1.08,1) rotate(3deg); }
+  60%       { transform: scale3d(1.05,0.97,1) rotate(-2deg); }
+  80%       { transform: scale3d(0.98,1.02,1) rotate(1deg); }
+}
+
+/* Modal bounce entrance */
+@keyframes modalBouncyEntrance {
+  0%   { transform: scale3d(0.75,0.75,1) translate3d(0,24px,0); opacity: 0; }
+  60%  { transform: scale3d(1.06,1.06,1) translate3d(0,-4px,0); opacity: 1; }
+  82%  { transform: scale3d(0.97,0.97,1) translate3d(0,1px,0); }
+  100% { transform: scale3d(1,1,1) translate3d(0,0,0); opacity: 1; }
+}
+
+/* ─────────────────────────────────────────
+   UTILITY ANIMATION CLASSES
+   ───────────────────────────────────────── */
+
+/* Grid tile drop — animation runs ONCE then stops (no infinite re-trigger) */
+.anim-tile-drop {
+  animation: tileDropIn 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  will-change: transform, opacity;
+}
+
+.anim-word-pop {
+  animation: wordFoundPop 0.48s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  will-change: transform;
+}
+
+.anim-cell-select {
+  animation: cellSelectBounce 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  will-change: transform;
+}
+
+.anim-victory-wave {
+  animation: victoryTileWave 0.72s cubic-bezier(0.34,1.56,0.64,1) both;
+  will-change: transform;
 }
 
 .anim-sparkle {
-  animation: sparklePop 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: sparklePop 0.52s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
   will-change: transform, opacity;
-}
-
-.anim-ripple {
-  animation: wordFoundRipple 0.6s ease-out forwards;
-  will-change: transform, opacity;
-}
-
-.anim-letter-shimmer {
-  animation: letterShimmer 0.5s ease-out forwards;
 }
 
 .anim-score-float {
-  animation: scoreFloat 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: scoreFloat 1.1s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
   will-change: transform, opacity;
 }
 
 .anim-trail-glow {
-  animation: trailGlow 1s ease-in-out infinite;
+  animation: trailGlow 0.9s ease-in-out infinite;
 }
 
-/* Enhanced word pill found state with shimmer */
+.anim-letter-shimmer {
+  animation: letterShimmer 0.48s ease-out forwards;
+}
+
+.anim-bouncy-pulse  { animation: bouncyPulse 2.4s ease-in-out infinite; }
+.anim-bouncy-wobble { animation: bouncyWobble 1.8s ease-in-out infinite; }
+.anim-modal-bounce  { animation: modalBouncyEntrance 0.38s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
 .word-pill-found {
   background-size: 200% auto;
   animation: pillShimmer 1.2s linear 1;
 }
 
+/* ─────────────────────────────────────────
+   TACTILE BUTTON CLASS
+   ───────────────────────────────────────── */
+.btn-bouncy {
+  transition: transform 0.16s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.16s ease-out;
+  will-change: transform;
+}
+.btn-bouncy:active {
+  transform: scale3d(0.88, 0.88, 1);
+}

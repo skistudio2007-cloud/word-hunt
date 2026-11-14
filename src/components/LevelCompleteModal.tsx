@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { Star, ArrowRight, Sparkles, Trophy, Zap } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Star, ChevronRight, Zap } from 'lucide-react';
 import { soundManager } from '../services/sound';
 import { LanguageCode } from '../types';
 import { getTranslation } from '../services/localization';
@@ -11,258 +11,313 @@ interface Props {
   onNextLevel: () => void;
 }
 
-interface ConfettiPiece {
-  id: number;
-  tx: number;
-  ty: number;
-  tr: number;
-  color: string;
-  delay: number;
-  duration: number;
-  width: number;
-  height: number;
-  borderRadius: string;
+// Pre-generate confetti data once at module level (never re-computed)
+interface Piece {
+  id: number; color: string; x: number; delay: number;
+  dur: number; w: number; h: number; br: string; amp: number;
 }
-
-const CELEBRATION_COLORS = [
-  '#2563EB', '#38BDF8', '#F59E0B', '#10B981', '#EC4899', '#8B5CF6', '#FBBF24', '#06B6D4', '#F43F5E', '#14B8A6'
-];
+const COLORS = ['#6366F1','#F59E0B','#10B981','#EC4899','#38BDF8','#8B5CF6','#FBBF24','#F43F5E','#14B8A6','#2563EB'];
+const PIECES: Piece[] = Array.from({ length: 32 }, (_, i) => ({
+  id: i,
+  color: COLORS[i % COLORS.length],
+  x: -50 + (i * 97) % 100,          // spread -50..+50 % from center
+  delay: (i * 0.038) % 0.6,
+  dur: 2.0 + (i % 5) * 0.18,
+  w: i % 3 === 0 ? 5 : i % 3 === 1 ? 9 : 7,
+  h: i % 3 === 0 ? 14 : i % 3 === 1 ? 9 : 7,
+  br: i % 3 === 0 ? '3px' : i % 3 === 1 ? '2px' : '50%',
+  amp: 60 + (i % 6) * 25,            // fall distance variation
+}));
 
 export const LevelCompleteModal: React.FC<Props> = React.memo(({
   starsAwarded = 3,
   language = 'en',
-  onNextLevel
+  onNextLevel,
 }) => {
-  const [activeStars, setActiveStars] = useState(0);
-  const [isNextClicked, setIsNextClicked] = useState(false);
+  const [starPhase, setStarPhase] = useState(0); // 0 = none, 1,2,3 = stars revealed
+  const [btnReady, setBtnReady] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const nextClickedRef = useRef(false);
 
-  const levelCompleteText = getTranslation(language, 'levelComplete') || 'LEVEL COMPLETED!';
   const nextText = getTranslation(language, 'nextLevel') || 'NEXT LEVEL';
 
-  // 24 premium party popper confetti pieces with multi-shape particles on GPU
-  const confetti = useMemo<ConfettiPiece[]>(() => {
-    const list: ConfettiPiece[] = [];
-    const count = 24;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * 2 * Math.PI;
-      const distance = 140 + (i % 6) * 32;
-      const isRibbon = i % 3 === 0;
-      const isDiamond = i % 3 === 1;
-      list.push({
-        id: i,
-        tx: Math.round(Math.cos(angle) * distance),
-        ty: Math.round(Math.sin(angle) * (distance * 0.85) + 30),
-        tr: (i * 85 + 180) % 720,
-        color: CELEBRATION_COLORS[i % CELEBRATION_COLORS.length],
-        delay: 0.04 + (i % 6) * 0.035,
-        duration: 1.6 + (i % 4) * 0.22,
-        width: isRibbon ? 6 : isDiamond ? 10 : 8,
-        height: isRibbon ? 16 : isDiamond ? 10 : 8,
-        borderRadius: isRibbon ? '2px' : isDiamond ? '2px' : '9999px'
-      });
-    }
-    return list;
-  }, []);
-
   useEffect(() => {
-    // Sequentially pop stars with cheerful musical chimes
-    const t1 = setTimeout(() => {
-      setActiveStars(1);
-      soundManager.playStarPop(0);
-    }, 320);
-
+    const t1 = setTimeout(() => { setStarPhase(1); soundManager.playStarPop(0); }, 350);
     const t2 = setTimeout(() => {
-      if (starsAwarded >= 2) {
-        setActiveStars(2);
-        soundManager.playStarPop(1);
-      }
-    }, 580);
-
+      if (starsAwarded >= 2) { setStarPhase(2); soundManager.playStarPop(1); }
+    }, 620);
     const t3 = setTimeout(() => {
-      if (starsAwarded >= 3) {
-        setActiveStars(3);
-        soundManager.playStarPop(2);
-      }
-    }, 840);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+      if (starsAwarded >= 3) { setStarPhase(3); soundManager.playStarPop(2); }
+    }, 890);
+    const t4 = setTimeout(() => setBtnReady(true), 1050);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [starsAwarded]);
 
+  const handleNext = () => {
+    if (nextClickedRef.current) return;
+    nextClickedRef.current = true;
+    soundManager.playTap();
+    setExiting(true);
+    setTimeout(onNextLevel, 220);
+  };
+
   return (
-    <motion.div 
+    <motion.div
       id="level-complete-backdrop"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 select-none overflow-hidden"
+      animate={{ opacity: exiting ? 0 : 1 }}
+      transition={{ duration: exiting ? 0.2 : 0.18, ease: 'easeOut' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-5 select-none overflow-hidden"
+      style={{ background: 'rgba(10,10,25,0.82)' }}
     >
-      {/* 1. Golden Celebration Aura (Smooth GPU Radial Glow) */}
-      <div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] h-[460px] pointer-events-none rounded-full opacity-30 select-none z-0 anim-bg-pulse"
-        style={{
-          background: 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(245,158,11,0.15) 50%, transparent 70%)',
-          transform: 'translateZ(0)'
-        }}
-      />
-
-      {/* 2. Confetti Burst Streamers (100% GPU Hardware Accelerated) */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0">
-        {confetti.map((c) => (
+      {/* ── Confetti Rain ── */}
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        aria-hidden
+        style={{ transform: 'translateZ(0)' }}
+      >
+        {PIECES.map(p => (
           <div
-            key={`confetti-${c.id}`}
+            key={p.id}
             style={{
               position: 'absolute',
-              width: `${c.width}px`,
-              height: `${c.height}px`,
-              borderRadius: c.borderRadius,
-              backgroundColor: c.color,
-              animation: `confettiFlutter ${c.duration}s cubic-bezier(0.22, 1, 0.36, 1) infinite`,
-              animationDelay: `${c.delay}s`,
-              transform: 'translateZ(0)',
+              top: '-10%',
+              left: `calc(50% + ${p.x}%)`,
+              width: p.w,
+              height: p.h,
+              borderRadius: p.br,
+              backgroundColor: p.color,
               willChange: 'transform, opacity',
-              ['--tx' as string]: `${c.tx}px`,
-              ['--ty' as string]: `${c.ty}px`,
-              ['--tr' as string]: `${c.tr}deg`
+              transform: 'translateZ(0)',
+              animation: `lcRain ${p.dur}s ${p.delay}s cubic-bezier(0.3,0,0.7,1) infinite`,
+              ['--amp' as string]: `${p.amp}px`,
+              ['--rot' as string]: `${((p.id * 137) % 540) - 270}deg`,
             }}
           />
         ))}
       </div>
 
-      {/* 3. Premium Victory Card with 3D Trophy, Stars & Next Button */}
+      {/* ── Victory Card ── */}
       <motion.div
         id="level-complete-card"
-        initial={{ scale: 0.65, opacity: 0, y: 35 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.85, opacity: 0, y: 20 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 420 }}
-        className="w-full max-w-xs bg-white rounded-3xl p-6 sm:p-7 shadow-2xl text-slate-900 text-center relative z-10 flex flex-col items-center space-y-4 border border-amber-200/80 overflow-visible transform-gpu"
+        initial={{ scale: 0.6, opacity: 0, y: 40 }}
+        animate={exiting
+          ? { scale: 0.85, opacity: 0, y: -20 }
+          : { scale: 1, opacity: 1, y: 0 }
+        }
+        transition={exiting
+          ? { duration: 0.2, ease: 'easeIn' }
+          : { type: 'spring', damping: 18, stiffness: 380, mass: 0.9 }
+        }
+        className="relative w-full max-w-[320px] flex flex-col items-center rounded-[2rem] overflow-hidden"
+        style={{ transform: 'translateZ(0)', willChange: 'transform' }}
       >
-        {/* Floating Trophy & Sunburst Badge */}
-        <div className="relative -mt-12">
-          {/* Rotating Sunburst Rays on GPU */}
-          <div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full opacity-35 anim-sunburst pointer-events-none"
-            style={{
-              background: 'conic-gradient(from 0deg, transparent 0deg, rgba(245,158,11,0.55) 20deg, transparent 40deg, rgba(245,158,11,0.55) 60deg, transparent 80deg, rgba(245,158,11,0.55) 100deg, transparent 120deg, rgba(245,158,11,0.55) 140deg, transparent 160deg, rgba(245,158,11,0.55) 180deg, transparent 200deg, rgba(245,158,11,0.55) 220deg, transparent 240deg, rgba(245,158,11,0.55) 260deg, transparent 280deg, rgba(245,158,11,0.55) 300deg, transparent 320deg, rgba(245,158,11,0.55) 340deg, transparent 360deg)'
-            }}
-          />
-
-          {/* Glowing Aura Ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 blur-md opacity-70 scale-125 anim-bg-pulse" />
-          
-          {/* Trophy Pop Container */}
-          <div
-            style={{
-              animation: 'trophyJuicyPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
-              animationDelay: '0.08s'
-            }}
-            className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 text-white flex items-center justify-center border-4 border-white shadow-xl shadow-amber-500/40 transform-gpu"
-          >
-            <Trophy className="w-11 h-11 text-amber-950/85 drop-shadow-sm" />
-          </div>
-
-          {/* Corner Sparkles */}
-          <div
-            style={{
-              animation: 'bgPulseSoft 2.5s ease-in-out infinite'
-            }}
-            className="absolute -top-2 -right-2 text-amber-400 drop-shadow"
-          >
-            <Sparkles className="w-7 h-7 fill-amber-300" />
-          </div>
-        </div>
-
-        {/* Victory Title & Ribbon */}
-        <div className="space-y-1">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 uppercase leading-tight">
-            {levelCompleteText}
-          </h2>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-            <span className="text-[11px] font-black text-amber-700 tracking-wider uppercase">
-              All Words Discovered!
-            </span>
-          </div>
-        </div>
-
-        {/* 3 Juicy Popping Stars Sequence */}
-        <div className="flex items-center justify-center gap-3 py-1">
-          {[1, 2, 3].map(starIndex => {
-            const isPopped = activeStars >= starIndex;
-            const isFilled = starsAwarded >= starIndex;
-
-            return (
-              <div 
-                key={`star-box-${starIndex}`}
-                className="relative flex items-center justify-center w-14 h-14"
-              >
-                {/* Expanding Star Ping Ring on Pop */}
-                {isPopped && isFilled && (
-                  <div className="absolute inset-0 rounded-2xl bg-amber-400/50 animate-ping pointer-events-none" />
-                )}
-
-                {/* Base Star Slot */}
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200/90 shadow-inner">
-                  <Star className="w-6 h-6 text-slate-300 fill-slate-200" />
-                </div>
-
-                {/* Popped Golden Star with Smooth GPU Pop Keyframe */}
-                {isPopped && isFilled && (
-                  <div
-                    style={{
-                      animation: 'starJuicyPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-                    }}
-                    className="absolute inset-0 flex items-center justify-center transform-gpu"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 border-2 border-amber-200 flex items-center justify-center shadow-lg shadow-amber-500/50">
-                      <Star className="w-6 h-6 fill-white text-white drop-shadow-sm" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Level Reward Pill (+100 XP) */}
-        <div className="flex items-center justify-center gap-2 pt-0.5">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-black shadow-2xs">
-            <Zap className="w-3.5 h-3.5 fill-blue-500 text-blue-500" />
-            <span>+100 XP EARNED</span>
-          </div>
-        </div>
-
-        {/* Juicy NEXT LEVEL Action Button */}
+        {/* Card gradient background */}
         <div
+          className="absolute inset-0 pointer-events-none"
           style={{
-            animation: 'buttonJuicyEntrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
-            animationDelay: '0.85s'
+            background: 'linear-gradient(160deg, #1e1b4b 0%, #0f172a 55%, #1a0a3e 100%)',
           }}
-          className="w-full pt-1"
-        >
-          <motion.button
-            id="btn-next-level"
-            whileHover={!isNextClicked ? { scale: 1.04 } : undefined}
-            whileTap={!isNextClicked ? { scale: 0.88 } : undefined}
-            disabled={isNextClicked}
-            onClick={() => {
-              if (isNextClicked) return;
-              setIsNextClicked(true);
-              soundManager.playTap();
-              onNextLevel();
-            }}
-            className={`btn-bouncy w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/35 flex items-center justify-center gap-2.5 transition-all border-b-4 border-blue-800 active:border-b-0 select-none ${
-              isNextClicked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
-            }`}
+        />
+
+        {/* Top shimmer stripe */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)' }}
+        />
+
+        {/* Inner glow rings */}
+        <div
+          className="absolute inset-0 pointer-events-none rounded-[2rem]"
+          style={{
+            boxShadow: 'inset 0 0 60px rgba(99,102,241,0.12), 0 0 0 1px rgba(255,255,255,0.08)',
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center w-full px-6 pt-8 pb-7 gap-5">
+
+          {/* ── Trophy badge ── */}
+          <motion.div
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.08, type: 'spring', damping: 12, stiffness: 300 }}
+            className="relative flex items-center justify-center"
           >
-            <span className="tracking-wide uppercase">{nextText}</span>
-            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-          </motion.button>
+            {/* Halo ring */}
+            <div
+              className="absolute w-24 h-24 rounded-full opacity-30"
+              style={{
+                background: 'radial-gradient(circle, #FBBF24 0%, transparent 70%)',
+                animation: 'lcHaloPulse 2.4s ease-in-out infinite',
+              }}
+            />
+            {/* Badge */}
+            <div
+              className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl"
+              style={{
+                background: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #D97706 100%)',
+                boxShadow: '0 8px 32px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.4)',
+              }}
+            >
+              <span style={{ fontSize: 38 }}>🏆</span>
+            </div>
+            {/* Sparkle dots */}
+            {[0,1,2,3].map(i => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-full bg-amber-300"
+                style={{
+                  top: `${50 + 48 * Math.sin((i / 4) * Math.PI * 2)}%`,
+                  left: `${50 + 48 * Math.cos((i / 4) * Math.PI * 2)}%`,
+                  transform: 'translate(-50%,-50%)',
+                  animation: `lcSparkDot 1.6s ${i * 0.2}s ease-in-out infinite`,
+                  opacity: 0.7,
+                }}
+              />
+            ))}
+          </motion.div>
+
+          {/* ── Headline ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.32, ease: [0.22,1,0.36,1] }}
+            className="text-center space-y-1"
+          >
+            <p className="text-xs font-black tracking-[0.2em] uppercase" style={{ color: '#FBBF24' }}>
+              Level Complete
+            </p>
+            <h2
+              className="text-3xl font-black tracking-tight leading-none"
+              style={{ color: '#fff', textShadow: '0 0 24px rgba(251,191,36,0.4)' }}
+            >
+              Brilliant! 🎉
+            </h2>
+          </motion.div>
+
+          {/* ── Stars row ── */}
+          <div className="flex items-center justify-center gap-3">
+            {[1, 2, 3].map(idx => {
+              const filled = starsAwarded >= idx;
+              const popped = starPhase >= idx;
+              return (
+                <div key={idx} className="relative w-16 h-16 flex items-center justify-center">
+                  {/* Slot background */}
+                  <div
+                    className="absolute inset-0 rounded-2xl"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  />
+
+                  {/* Ping ring on pop */}
+                  <AnimatePresence>
+                    {popped && filled && (
+                      <motion.div
+                        key="ring"
+                        initial={{ scale: 0.5, opacity: 0.9 }}
+                        animate={{ scale: 2.0, opacity: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                        className="absolute inset-0 rounded-2xl"
+                        style={{ background: 'rgba(251,191,36,0.5)', transformOrigin: 'center' }}
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Empty star */}
+                  <Star
+                    className="absolute w-7 h-7"
+                    style={{ color: 'rgba(255,255,255,0.12)', fill: 'rgba(255,255,255,0.06)' }}
+                  />
+
+                  {/* Filled star pop */}
+                  <AnimatePresence>
+                    {popped && filled && (
+                      <motion.div
+                        key="star"
+                        initial={{ scale: 0, rotate: -30 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', damping: 10, stiffness: 350 }}
+                        className="absolute flex items-center justify-center"
+                        style={{ willChange: 'transform' }}
+                      >
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                          style={{
+                            background: 'linear-gradient(145deg, #FDE68A, #F59E0B, #D97706)',
+                            boxShadow: '0 4px 16px rgba(245,158,11,0.6), inset 0 1px 0 rgba(255,255,255,0.4)',
+                          }}
+                        >
+                          <Star className="w-7 h-7 fill-white text-white drop-shadow" />
+                        </div>
+                      </motion.div>
+                    )}
+                    {popped && !filled && (
+                      <motion.div
+                        key="empty-star"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', damping: 14, stiffness: 300 }}
+                        className="absolute w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ background: 'rgba(255,255,255,0.08)' }}
+                      >
+                        <Star className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.3)', fill: 'rgba(255,255,255,0.12)' }} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── XP reward pill ── */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, type: 'spring', damping: 14, stiffness: 280 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{
+              background: 'rgba(99,102,241,0.18)',
+              border: '1px solid rgba(99,102,241,0.3)',
+            }}
+          >
+            <Zap className="w-4 h-4" style={{ color: '#818CF8', fill: '#818CF8' }} />
+            <span className="text-sm font-black tracking-wide" style={{ color: '#C7D2FE' }}>+100 XP Earned!</span>
+          </motion.div>
+
+          {/* ── Next Level Button ── */}
+          <AnimatePresence>
+            {btnReady && (
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', damping: 16, stiffness: 320 }}
+                className="w-full"
+              >
+                <motion.button
+                  id="btn-next-level"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={handleNext}
+                  className="relative w-full py-4 rounded-2xl font-black text-base text-white overflow-hidden flex items-center justify-center gap-2.5 cursor-pointer select-none"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 50%, #7C3AED 100%)',
+                    boxShadow: '0 6px 24px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  }}
+                >
+                  {/* Shimmer sweep */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)',
+                      animation: 'lcBtnShimmer 2.2s ease-in-out infinite',
+                    }}
+                  />
+                  <span className="relative tracking-wide uppercase">{nextText}</span>
+                  <ChevronRight className="relative w-5 h-5 stroke-[2.5]" />
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </motion.div>
