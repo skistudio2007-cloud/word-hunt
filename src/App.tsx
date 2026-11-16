@@ -364,7 +364,7 @@ export default function App() {
 
     const completedLvl = currentPuzzle?.levelNumber || (progress.currentLevel - 1);
 
-    // Show Interstitial Ad at Level 16, 22, 28, 34, 40... (every 6 levels after Level 10)
+    // Show Interstitial Ad at Level 3, 6, 9, 12, 15... (every 3 levels after Level 3 with pacing cooldown)
     if (adService.shouldShowLevelMilestoneAd(completedLvl, progress.hasRemovedAds)) {
       if (Capacitor.isNativePlatform()) {
         adService.showInterstitial().finally(() => {

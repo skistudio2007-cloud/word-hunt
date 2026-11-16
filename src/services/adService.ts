@@ -1,11 +1,11 @@
 /**
  * Professional Game Ad Engine for WORD HUNT
- * Supports Native Android (via @capacitor-community/admob) with graceful Interactive Fallback.
+ * Supports Native Android (via @capacitor-community/admob).
  * Features:
- * - Intelligent background preloading with exponential backoff retry
+ * - Intelligent background preloading with promise pooling & exponential backoff retry
  * - Network reconnection & app lifecycle auto-recovery
- * - Audio-safe ad playback (auto-pauses/resumes ambient sound)
- * - Pacing & frequency capping for interstitials (35s minimum cooldown)
+ * - Audio-safe ad playback (auto-pauses and resumes ambient sound strictly on ad dismiss)
+ * - Pacing & frequency capping for interstitials (35s minimum cooldown, milestones at Lvl 3, 6, 9...)
  * - Dual-layer reward verification + bridge buffer protection
  * - 100% reliable hint granting guarantee
  */
@@ -15,6 +15,7 @@ import {
   AdMob, 
   AdMobInitializationOptions, 
   RewardAdPluginEvents, 
+  InterstitialAdPluginEvents,
   AdMobRewardItem,
   AdMobError 
 } from '@capacitor-community/admob';
@@ -41,13 +42,17 @@ class AdMobService {
   private isAdPlaying = false;
   private isRewardedReady = false;
   private isInterstitialReady = false;
-  private isPreloadingRewarded = false;
-  private isPreloadingInterstitial = false;
+
+  // Active in-flight preload promises to avoid redundant/competing requests
+  private rewardedPreloadPromise: Promise<boolean> | null = null;
+  private interstitialPreloadPromise: Promise<boolean> | null = null;
+
   private rewardedRetryTimeout: ReturnType<typeof setTimeout> | null = null;
   private interstitialRetryTimeout: ReturnType<typeof setTimeout> | null = null;
   private rewardedRetryDelay = 5000;
   private interstitialRetryDelay = 5000;
   private readonly MAX_RETRY_DELAY = 60000;
+
   private lastAdShowTimestamp = 0;
   private readonly MIN_INTERSTITIAL_INTERVAL_MS = 35000; // 35 seconds cooldown
   private initPromise: Promise<void> | null = null;
@@ -104,46 +109,50 @@ class AdMobService {
 
   /**
    * Pre-loads a real Google AdMob rewarded video ad in memory with exponential backoff retry.
+   * Leverages promise pooling so concurrent callers share the in-flight request.
    */
   public async preloadRewardVideo(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     if (this.isRewardedReady) return true;
-    if (this.isPreloadingRewarded) return false;
+    if (this.rewardedPreloadPromise) return this.rewardedPreloadPromise;
 
-    this.isPreloadingRewarded = true;
-    try {
-      console.log('🔄 Requesting Real AdMob Rewarded Video:', this.config.rewardedAdUnitId);
-      await AdMob.prepareRewardVideoAd({
-        adId: this.config.rewardedAdUnitId
-      });
-      this.isRewardedReady = true;
-      this.rewardedRetryDelay = 5000; // Reset retry delay
-      if (this.rewardedRetryTimeout) {
-        clearTimeout(this.rewardedRetryTimeout);
-        this.rewardedRetryTimeout = null;
+    this.rewardedPreloadPromise = (async () => {
+      try {
+        console.log('🔄 Requesting Real AdMob Rewarded Video:', this.config.rewardedAdUnitId);
+        await AdMob.prepareRewardVideoAd({
+          adId: this.config.rewardedAdUnitId
+        });
+        this.isRewardedReady = true;
+        this.rewardedRetryDelay = 5000; // Reset retry delay
+        if (this.rewardedRetryTimeout) {
+          clearTimeout(this.rewardedRetryTimeout);
+          this.rewardedRetryTimeout = null;
+        }
+        console.log('✅ Real AdMob Rewarded Video preloaded and ready in cache');
+        return true;
+      } catch (err) {
+        console.warn(`⚠️ Real AdMob Rewarded Video load failed. Retrying in ${this.rewardedRetryDelay / 1000}s:`, err);
+        this.isRewardedReady = false;
+
+        // Schedule background retry with exponential backoff
+        if (this.rewardedRetryTimeout) clearTimeout(this.rewardedRetryTimeout);
+        this.rewardedRetryTimeout = setTimeout(() => {
+          this.preloadRewardVideo().catch(() => {});
+        }, this.rewardedRetryDelay);
+        this.rewardedRetryDelay = Math.min(this.rewardedRetryDelay * 2, this.MAX_RETRY_DELAY);
+
+        return false;
+      } finally {
+        this.rewardedPreloadPromise = null;
       }
-      console.log('✅ Real AdMob Rewarded Video preloaded and ready in cache');
-      return true;
-    } catch (err) {
-      console.warn(`⚠️ Real AdMob Rewarded Video load failed. Retrying in ${this.rewardedRetryDelay / 1000}s:`, err);
-      this.isRewardedReady = false;
-      
-      // Schedule background retry with exponential backoff
-      if (this.rewardedRetryTimeout) clearTimeout(this.rewardedRetryTimeout);
-      this.rewardedRetryTimeout = setTimeout(() => {
-        this.preloadRewardVideo().catch(() => {});
-      }, this.rewardedRetryDelay);
-      this.rewardedRetryDelay = Math.min(this.rewardedRetryDelay * 2, this.MAX_RETRY_DELAY);
+    })();
 
-      return false;
-    } finally {
-      this.isPreloadingRewarded = false;
-    }
+    return this.rewardedPreloadPromise;
   }
 
   /**
    * Shows a real Google AdMob Rewarded Video.
-   * If not cached, attempts a quick 3.5s fast-load.
+   * If not cached, initiates a fast-load with promise pooling.
    * Features dual-event verification (native event + show promise),
    * bridge buffer, and clean audio management.
    */
@@ -153,37 +162,30 @@ class AdMobService {
     }
 
     if (this.isAdPlaying) {
-      console.warn('⚠️ Rewarded Ad is already playing');
+      console.warn('⚠️ Ad is already playing');
       return { success: false, earnedReward: false, message: 'ad_in_progress' };
     }
 
     await this.initialize();
 
-    // Make sure a rewarded ad is available before showing it.
-// If another preload is already running, wait for it instead of
-// immediately returning "ad_load_failed".
-if (!this.isRewardedReady) {
-  console.log('⏳ Rewarded ad is not ready. Loading/waiting...');
+    // Ensure rewarded ad is available
+    if (!this.isRewardedReady) {
+      console.log('⏳ Rewarded ad is not ready. Loading/waiting up to 7s...');
+      const loaded = await Promise.race([
+        this.preloadRewardVideo(),
+        new Promise<boolean>(res => setTimeout(() => res(false), 7000))
+      ]);
 
-  this.preloadRewardVideo().catch(() => {});
-
-  const waitUntil = Date.now() + 5000;
-
-  while (!this.isRewardedReady && Date.now() < waitUntil) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  if (!this.isRewardedReady) {
-    console.warn('❌ Rewarded ad is still not ready after waiting.');
-    return {
-      success: false,
-      earnedReward: false,
-      message: 'ad_load_failed'
-    };
-  }
-
-  console.log('✅ Rewarded ad is ready. Showing now.');
-}
+      if (!loaded && !this.isRewardedReady) {
+        console.warn('❌ Rewarded ad is still not ready after waiting.');
+        return {
+          success: false,
+          earnedReward: false,
+          message: 'ad_load_failed'
+        };
+      }
+      console.log('✅ Rewarded ad is ready. Showing now.');
+    }
 
     this.isAdPlaying = true;
     soundManager.stopAmbientMusic(); // Silence music during ad playback
@@ -254,9 +256,9 @@ if (!this.isRewardedReady) {
             settle({ success: true, earnedReward: true });
           } else if (!rewardFallbackTimeout) {
             rewardFallbackTimeout = setTimeout(() => {
-              console.log('ℹ️ Reward earned and 6s elapsed without dismiss event; auto-settling reward');
+              console.log('ℹ️ Reward earned and 5s elapsed without dismiss event; auto-settling reward');
               settle({ success: true, earnedReward: true });
-            }, 6000);
+            }, 5000);
           }
         };
 
@@ -286,7 +288,7 @@ if (!this.isRewardedReady) {
                   console.log('ℹ️ No reward confirmed after dismiss grace period - user closed early');
                   settle({ success: false, earnedReward: false, message: 'ad_closed_early' });
                 }
-              }, 2000);
+              }, 1500);
             }
           }
         );
@@ -323,44 +325,50 @@ if (!this.isRewardedReady) {
 
   /**
    * Pre-loads a real Google AdMob interstitial ad in memory with exponential backoff retry.
+   * Leverages promise pooling so concurrent callers share the in-flight request.
    */
   public async preloadInterstitial(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
     if (this.isInterstitialReady) return true;
-    if (this.isPreloadingInterstitial) return false;
+    if (this.interstitialPreloadPromise) return this.interstitialPreloadPromise;
 
-    this.isPreloadingInterstitial = true;
-    try {
-      console.log('🔄 Requesting Real AdMob Interstitial:', this.config.interstitialAdUnitId);
-      await AdMob.prepareInterstitial({
-        adId: this.config.interstitialAdUnitId
-      });
-      this.isInterstitialReady = true;
-      this.interstitialRetryDelay = 5000;
-      if (this.interstitialRetryTimeout) {
-        clearTimeout(this.interstitialRetryTimeout);
-        this.interstitialRetryTimeout = null;
+    this.interstitialPreloadPromise = (async () => {
+      try {
+        console.log('🔄 Requesting Real AdMob Interstitial:', this.config.interstitialAdUnitId);
+        await AdMob.prepareInterstitial({
+          adId: this.config.interstitialAdUnitId
+        });
+        this.isInterstitialReady = true;
+        this.interstitialRetryDelay = 5000;
+        if (this.interstitialRetryTimeout) {
+          clearTimeout(this.interstitialRetryTimeout);
+          this.interstitialRetryTimeout = null;
+        }
+        console.log('✅ Real AdMob Interstitial preloaded and ready in cache');
+        return true;
+      } catch (err) {
+        console.warn(`⚠️ Real AdMob Interstitial load failed. Retrying in ${this.interstitialRetryDelay / 1000}s:`, err);
+        this.isInterstitialReady = false;
+
+        if (this.interstitialRetryTimeout) clearTimeout(this.interstitialRetryTimeout);
+        this.interstitialRetryTimeout = setTimeout(() => {
+          this.preloadInterstitial().catch(() => {});
+        }, this.interstitialRetryDelay);
+        this.interstitialRetryDelay = Math.min(this.interstitialRetryDelay * 2, this.MAX_RETRY_DELAY);
+
+        return false;
+      } finally {
+        this.interstitialPreloadPromise = null;
       }
-      console.log('✅ Real AdMob Interstitial preloaded and ready in cache');
-      return true;
-    } catch (err) {
-      console.warn(`⚠️ Real AdMob Interstitial load failed. Retrying in ${this.interstitialRetryDelay / 1000}s:`, err);
-      this.isInterstitialReady = false;
+    })();
 
-      if (this.interstitialRetryTimeout) clearTimeout(this.interstitialRetryTimeout);
-      this.interstitialRetryTimeout = setTimeout(() => {
-        this.preloadInterstitial().catch(() => {});
-      }, this.interstitialRetryDelay);
-      this.interstitialRetryDelay = Math.min(this.interstitialRetryDelay * 2, this.MAX_RETRY_DELAY);
-
-      return false;
-    } finally {
-      this.isPreloadingInterstitial = false;
-    }
+    return this.interstitialPreloadPromise;
   }
 
   /**
    * Shows a real Google AdMob Interstitial ad.
+   * Listens for ad dismissal to ensure background music remains muted
+   * throughout ad display and only resumes once the player closes the ad.
    */
   public async showInterstitial(): Promise<{ success: boolean; message?: string }> {
     if (!Capacitor.isNativePlatform()) {
@@ -376,10 +384,13 @@ if (!this.isRewardedReady) {
 
     // Fast-load if not ready
     if (!this.isInterstitialReady) {
-      const fastLoad = this.preloadInterstitial();
-      const timeout = new Promise<boolean>(res => setTimeout(() => res(false), 3000));
-      const loaded = await Promise.race([fastLoad, timeout]);
+      console.log('⏳ Interstitial ad is not ready. Loading/waiting up to 6s...');
+      const loaded = await Promise.race([
+        this.preloadInterstitial(),
+        new Promise<boolean>(res => setTimeout(() => res(false), 6000))
+      ]);
       if (!loaded && !this.isInterstitialReady) {
+        console.warn('❌ Interstitial ad load failed or timed out.');
         return { success: false, message: 'ad_load_failed' };
       }
     }
@@ -387,34 +398,87 @@ if (!this.isRewardedReady) {
     this.isAdPlaying = true;
     soundManager.stopAmbientMusic();
 
-    try {
-      this.isInterstitialReady = false;
-      await AdMob.showInterstitial({
-        adId: this.config.interstitialAdUnitId
-      });
-      this.lastAdShowTimestamp = Date.now();
-      return { success: true };
-    } catch (error) {
-      console.error('AdMob showInterstitial error:', error);
-      return { success: false, message: String(error) };
-    } finally {
-      this.isAdPlaying = false;
+    return new Promise<{ success: boolean; message?: string }>(async (resolve) => {
+      let isSettled = false;
+      let safetyTimeout: ReturnType<typeof setTimeout> | null = null;
+      const listeners: PluginListenerHandle[] = [];
+
+      const cleanup = async () => {
+        if (safetyTimeout) {
+          clearTimeout(safetyTimeout);
+          safetyTimeout = null;
+        }
+        this.isAdPlaying = false;
+        this.isInterstitialReady = false;
+        this.lastAdShowTimestamp = Date.now();
+
+        try {
+          soundManager.startAmbientMusic();
+        } catch {}
+
+        for (const listener of listeners) {
+          try {
+            await listener.remove();
+          } catch (err) {
+            console.warn('⚠️ Error removing interstitial listener:', err);
+          }
+        }
+        listeners.length = 0;
+
+        // Preload next ad in background
+        this.preloadInterstitial().catch(() => {});
+      };
+
+      const settle = async (res: { success: boolean; message?: string }) => {
+        if (isSettled) return;
+        isSettled = true;
+        await cleanup();
+        resolve(res);
+      };
+
+      safetyTimeout = setTimeout(() => {
+        console.warn('⚠️ AdMob Interstitial timed out without dismiss event');
+        settle({ success: false, message: 'ad_timeout' });
+      }, 120000);
+
       try {
-        soundManager.startAmbientMusic();
-      } catch {}
-      // Preload next ad in background
-      this.preloadInterstitial().catch(() => {});
-    }
+        const dismissListener = await AdMob.addListener(
+          InterstitialAdPluginEvents.Dismissed,
+          () => {
+            console.log('ℹ️ AdMob Interstitial dismissed by user.');
+            settle({ success: true });
+          }
+        );
+        listeners.push(dismissListener);
+
+        const failedToShowListener = await AdMob.addListener(
+          InterstitialAdPluginEvents.FailedToShow,
+          (err: AdMobError) => {
+            console.warn('⚠️ AdMob Interstitial failed to show:', err);
+            settle({ success: false, message: err?.message || 'ad_show_failed' });
+          }
+        );
+        listeners.push(failedToShowListener);
+
+        this.isInterstitialReady = false;
+        await AdMob.showInterstitial({
+          adId: this.config.interstitialAdUnitId
+        });
+      } catch (error) {
+        console.error('AdMob showInterstitial error:', error);
+        settle({ success: false, message: String(error) });
+      }
+    });
   }
 
   /**
    * Checks if an ad should be displayed at level milestone with professional pacing.
-   * Starts after Level 10 with a 6-level gap: Level 16, 22, 28, 34, 40, ...
+   * Starts after Level 3 with a 3-level frequency: Level 3, 6, 9, 12, 15, 18, 21, ...
    * Enforces a 35-second cooldown so players are never spammed.
    */
   public shouldShowLevelMilestoneAd(completedLevel: number, hasRemovedAds: boolean = false): boolean {
     if (hasRemovedAds) return false;
-    const isMilestone = completedLevel >= 16 && (completedLevel - 10) % 6 === 0;
+    const isMilestone = completedLevel >= 3 && completedLevel % 3 === 0;
     if (!isMilestone) return false;
 
     // Pacing cooldown: Ensure at least 35s since the last ad
